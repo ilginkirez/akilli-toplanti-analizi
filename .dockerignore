@@ -1,0 +1,12 @@
+# Optimize build context (Süreci hızlandırmak için)
+**/node_modules
+**/ami_data
+**/recordings
+**/datasets
+**/.git
+**/.pytest_cache
+**/__pycache__
+**/.env
+**/.venv
+**/dist
+**/.next

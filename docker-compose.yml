@@ -1,0 +1,59 @@
+services:
+  # 1. OpenVidu Server (Development Mode)
+  openvidu:
+    image: openvidu/openvidu-dev:2.30.0
+    ports:
+      - "4443:4443"
+    environment:
+      - OPENVIDU_SECRET=MY_SECRET
+      - OPENVIDU_RECORDING=true
+      - OPENVIDU_RECORDING_PATH=/opt/openvidu/recordings
+      - OPENVIDU_RECORDING_AUTOSTOP_TIMEOUT=5
+      - OPENVIDU_CDR=true
+      - OPENVIDU_CDR_PATH=/opt/openvidu/cdr
+      - OPENVIDU_WEBHOOK=true
+      - OPENVIDU_WEBHOOK_ENDPOINT=http://backend:8000/api/openvidu/webhook
+      - OPENVIDU_WEBHOOK_EVENTS=["sessionCreated","sessionDestroyed","participantJoined","participantLeft","webrtcConnectionCreated","webrtcConnectionDestroyed","recordingStatusChanged"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./meeting_analyzer/recordings:/opt/openvidu/recordings
+      - ./meeting_analyzer/cdr:/opt/openvidu/cdr
+    networks:
+      - meeting-net
+
+  # 2. Python Backend (FastAPI)
+  backend:
+    build:
+      context: ./meeting_analyzer
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENVIDU_URL=http://openvidu:4443
+      - OPENVIDU_SECRET=MY_SECRET
+      - SSL_VERIFY=false
+    volumes:
+      - ./meeting_analyzer/src/storage:/app/src/storage
+      - ./meeting_analyzer/recordings:/app/recordings
+    depends_on:
+      - openvidu
+    networks:
+      - meeting-net
+
+  # 3. React Frontend (Vite)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - meeting-net
+
+networks:
+  meeting-net:
+    driver: bridge

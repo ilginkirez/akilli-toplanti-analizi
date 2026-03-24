@@ -1,0 +1,35 @@
+.DS_Store
+Thumbs.db
+
+# Node / frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Python
+.venv/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Local env files
+.env
+.env.*
+
+# Notebook / editor noise
+.ipynb_checkpoints/
+
+# Runtime outputs and logs
+*.log
+recordings/
+src/storage/sessions/
+meeting_analyzer/src/storage/sessions/
+meeting_analyzer/recordings/
+meeting_analyzer/cdr/
+
+# Large local datasets
+meeting_analyzer/ami_data/
+
+# Archives generated during tests/runs
+*.zip
