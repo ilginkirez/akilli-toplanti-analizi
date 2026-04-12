@@ -5,7 +5,26 @@
  * Meeting Analyzer backend'ine REST istekleri gönderir.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+function resolveApiBase() {
+  const configured = import.meta.env.VITE_API_URL?.trim();
+  if (configured) {
+    return configured.replace(/\/$/, '');
+  }
+
+  if (typeof window === 'undefined') {
+    return 'http://localhost:8000';
+  }
+
+  const hostname = window.location.hostname;
+  const isLocalhost =
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '[::1]';
+
+  return isLocalhost ? 'http://localhost:8000' : '';
+}
+
+const API_BASE = resolveApiBase();
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -67,7 +86,7 @@ export interface JoinTokenResponse {
 // ─── API Functions ──────────────────────────────────────────────────────────
 
 export async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const url = `${API_BASE}${path}`;
+  const url = API_BASE ? `${API_BASE}${path}` : path;
   const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json' },
     ...options,

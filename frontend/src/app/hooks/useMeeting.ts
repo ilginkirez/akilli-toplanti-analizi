@@ -171,6 +171,8 @@ export function useMeeting() {
           event.stream.connection.connectionId,
         );
         const mediaStream = event.stream.getMediaStream();
+        const audioTracks = mediaStream?.getAudioTracks() ?? [];
+        const videoTracks = mediaStream?.getVideoTracks() ?? [];
 
         const newParticipant: Participant = {
           id: connectionData.participantId,
@@ -180,9 +182,9 @@ export function useMeeting() {
           isMuted: !event.stream.audioActive,
           isVideoOn: event.stream.videoActive,
           isSpeaking: false,
-          stream: mediaStream,
-          audioTrack: mediaStream.getAudioTracks()[0] || null,
-          videoTrack: mediaStream.getVideoTracks()[0] || null,
+          stream: mediaStream ?? null,
+          audioTrack: audioTracks[0] || null,
+          videoTrack: videoTracks[0] || null,
         };
 
         setState((current) => {
@@ -293,6 +295,8 @@ export function useMeeting() {
       });
 
       const mediaStream = publisher.stream.getMediaStream();
+      const audioTracks = mediaStream?.getAudioTracks() ?? [];
+      const videoTracks = mediaStream?.getVideoTracks() ?? [];
 
       await api.updateParticipantStream(response.participant_id, {
         session_id: response.session_id,
@@ -314,9 +318,9 @@ export function useMeeting() {
         isMuted: false,
         isVideoOn: true,
         isSpeaking: false,
-        stream: mediaStream,
-        audioTrack: mediaStream.getAudioTracks()[0] || null,
-        videoTrack: mediaStream.getVideoTracks()[0] || null,
+        stream: mediaStream ?? null,
+        audioTrack: audioTracks[0] || null,
+        videoTrack: videoTracks[0] || null,
       };
 
       setState((current) => ({
