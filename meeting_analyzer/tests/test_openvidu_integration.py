@@ -38,7 +38,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 @pytest.fixture
 def mock_env(monkeypatch):
     """OpenVidu ortam değişkenlerini ayarlar."""
-    monkeypatch.setenv("OPENVIDU_URL", "https://localhost:4443")
+    monkeypatch.setenv("OPENVIDU_URL", "http://localhost:4443")
     monkeypatch.setenv("OPENVIDU_SECRET", "TEST_SECRET")
     monkeypatch.setenv("SSL_VERIFY", "false")
     monkeypatch.setenv("RECORDING_OUTPUT_DIR", "./test_recordings")
