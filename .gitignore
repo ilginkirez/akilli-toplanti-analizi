@@ -36,5 +36,3 @@ meeting_analyzer/ami_data/
 
 # Archives generated during tests/runs
 *.zip
-
-.vercel
