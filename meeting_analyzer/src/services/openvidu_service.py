@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 
 import httpx
 
-OV_URL = os.getenv("OPENVIDU_URL", "https://localhost:4443").rstrip("/")
+OV_URL = os.getenv("OPENVIDU_URL", "http://localhost:4443").rstrip("/")
 OV_SECRET = os.getenv("OPENVIDU_SECRET", "MY_SECRET")
 OV_VERIFY_SSL = os.getenv("SSL_VERIFY", "false").lower() == "true"
 
@@ -74,11 +74,12 @@ async def create_connection(
         "record": True,
         "data": server_data,
     }
-    return await _request(
+    connection = await _request(
         "POST",
         f"/openvidu/api/sessions/{session_id}/connection",
         payload,
     )
+    return connection
 
 
 async def create_token(
