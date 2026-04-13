@@ -9,7 +9,7 @@ OpenVidu 2.x Community Edition REST API'sini kullanarak:
 - Oturum bilgisi sorgulama
 
 Bağlantı bilgileri .env dosyasından okunur:
-    OPENVIDU_URL=https://localhost:4443
+    OPENVIDU_URL=http://localhost:4443
     OPENVIDU_SECRET=MY_SECRET
 """
 
