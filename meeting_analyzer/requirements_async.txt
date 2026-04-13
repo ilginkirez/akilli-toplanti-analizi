@@ -1,0 +1,7 @@
+celery[redis]==5.3.4
+redis==5.0.1
+torch==2.1.0
+openai-whisper==20231117
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+websockets==12.0
