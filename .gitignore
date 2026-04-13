@@ -22,8 +22,11 @@ __pycache__/
 
 # Runtime outputs and logs
 *.log
+compose.env
+.ngrok.exe.old
 recordings/
-src/storage/sessions/
+src/storage/
+meeting_analyzer/src/storage/
 meeting_analyzer/src/storage/sessions/
 meeting_analyzer/recordings/
 meeting_analyzer/cdr/

@@ -23,8 +23,12 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-# Proje kökünü path'e ekle
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Backend'i kendi klasöründen çalıştırarak tüm göreli yolları tek yerde topluyoruz.
+os.chdir(BASE_DIR)
+load_dotenv(os.path.join(BASE_DIR, ".env"), override=False)
+sys.path.insert(0, BASE_DIR)
 
 
 def main():
