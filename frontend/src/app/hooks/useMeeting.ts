@@ -450,6 +450,11 @@ export function useMeeting() {
     const room = new Room({
       adaptiveStream: true,
       dynacast: true,
+      audioCaptureDefaults: {
+        autoGainControl: false,
+        echoCancellation: false,
+        noiseSuppression: false,
+      },
       videoCaptureDefaults: {
         resolution: VideoPresets.h720.resolution,
       },
