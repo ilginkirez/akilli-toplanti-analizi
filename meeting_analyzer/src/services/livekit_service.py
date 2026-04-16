@@ -181,3 +181,39 @@ async def remove_participant(room_name: str, identity: str) -> Dict[str, Any]:
     ) as client:
         response = await client.room.remove_participant(request)
         return _proto_to_dict(response)
+
+
+async def start_track_egress(
+    room_name: str,
+    track_id: str,
+    filepath: str,
+) -> Dict[str, Any]:
+    _require_configuration()
+
+    request = api.TrackEgressRequest()
+    request.room_name = room_name
+    request.track_id = track_id
+    request.file.filepath = filepath
+
+    async with api.LiveKitAPI(
+        url=LIVEKIT_API_URL,
+        api_key=LIVEKIT_API_KEY,
+        api_secret=LIVEKIT_API_SECRET,
+    ) as client:
+        response = await client.egress.start_track_egress(request)
+        return _proto_to_dict(response)
+
+
+async def stop_egress(egress_id: str) -> Dict[str, Any]:
+    _require_configuration()
+
+    request = api.StopEgressRequest()
+    request.egress_id = egress_id
+
+    async with api.LiveKitAPI(
+        url=LIVEKIT_API_URL,
+        api_key=LIVEKIT_API_KEY,
+        api_secret=LIVEKIT_API_SECRET,
+    ) as client:
+        response = await client.egress.stop_egress(request)
+        return _proto_to_dict(response)

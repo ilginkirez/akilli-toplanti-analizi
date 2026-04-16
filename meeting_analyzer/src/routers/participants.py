@@ -3,6 +3,10 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException
 
+from ..services.egress_recording_service import (
+    maybe_finalize_session_recording,
+    stop_participant_egress,
+)
 from ..services import livekit_service
 from ..services.session_store import session_store
 
@@ -43,6 +47,13 @@ async def leave_participant(participant_id: str, data: Dict[str, Any]):
     if not session_id:
         raise HTTPException(status_code=400, detail="session_id required")
 
+    await stop_participant_egress(
+        session_id=session_id,
+        participant_id=participant_id,
+        reason=data.get("reason") or "client_leave",
+        ended_at=data.get("left_at"),
+        run_analysis=False,
+    )
     session_store.mark_participant_left(
         session_id=session_id,
         participant_id=participant_id,
@@ -50,6 +61,7 @@ async def leave_participant(participant_id: str, data: Dict[str, Any]):
         left_at=data.get("left_at") or datetime.datetime.now(datetime.UTC).isoformat(),
         reason=data.get("reason"),
     )
+    await maybe_finalize_session_recording(session_id)
 
     return {"status": "left", "participant_id": participant_id}
 
@@ -92,6 +104,13 @@ async def remove_participant(participant_id: str, data: Dict[str, Any]):
     if not session_id:
         raise HTTPException(status_code=400, detail="session_id required")
 
+    await stop_participant_egress(
+        session_id=session_id,
+        participant_id=participant_id,
+        reason=data.get("reason") or "removed_by_admin",
+        ended_at=data.get("left_at"),
+        run_analysis=False,
+    )
     try:
         await livekit_service.remove_participant(session_id, participant_id)
     except Exception as exc:
@@ -103,5 +122,6 @@ async def remove_participant(participant_id: str, data: Dict[str, Any]):
         left_at=data.get("left_at") or datetime.datetime.now(datetime.UTC).isoformat(),
         reason=data.get("reason") or "removed_by_admin",
     )
+    await maybe_finalize_session_recording(session_id)
 
     return {"status": "removed", "participant_id": participant_id}

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  AudioPresets,
   type AudioTrack as LiveKitAudioTrack,
   ConnectionState,
   Room,
@@ -41,6 +42,11 @@ export interface MeetingState {
   connectionState: ConnectionState;
   connectionMessage: string | null;
 }
+
+// Temporary diagnostic switch:
+// the app's extra local microphone recording path is one of the few
+// meaningful differences from stable upstream WebRTC samples.
+const ENABLE_LOCAL_AUDIO_RECORDING = false;
 
 type StreamCacheEntry = {
   audioTrack: MediaStreamTrack | null;
@@ -150,6 +156,22 @@ function pickRecordingMimeType(): string {
   ];
 
   return candidates.find((item) => MediaRecorder.isTypeSupported(item)) ?? '';
+}
+
+async function optimizeLocalCameraTrack(room: Room) {
+  const cameraTrack = room.localParticipant.getTrackPublication(
+    Track.Source.Camera,
+  )?.videoTrack as (LiveKitVideoTrack & { prioritizePerformance?: () => Promise<void> }) | null;
+
+  if (!cameraTrack?.prioritizePerformance) {
+    return;
+  }
+
+  try {
+    await cameraTrack.prioritizePerformance();
+  } catch (error) {
+    console.warn('optimizeLocalCameraTrack failed', error);
+  }
 }
 
 export function useMeeting() {
@@ -287,6 +309,10 @@ export function useMeeting() {
   }, []);
 
   const startLocalAudioRecording = useCallback(async (room: Room) => {
+    if (!ENABLE_LOCAL_AUDIO_RECORDING) {
+      return;
+    }
+
     if (typeof MediaRecorder === 'undefined' || mediaRecorderRef.current) {
       return;
     }
@@ -319,6 +345,10 @@ export function useMeeting() {
   }, []);
 
   const stopAndUploadLocalAudioRecording = useCallback(async () => {
+    if (!ENABLE_LOCAL_AUDIO_RECORDING) {
+      return;
+    }
+
     const recorder = mediaRecorderRef.current;
     if (!recorder) {
       return;
@@ -454,9 +484,16 @@ export function useMeeting() {
         autoGainControl: false,
         echoCancellation: false,
         noiseSuppression: false,
+        voiceIsolation: false,
       },
       videoCaptureDefaults: {
-        resolution: VideoPresets.h720.resolution,
+        resolution: VideoPresets.h540.resolution,
+      },
+      publishDefaults: {
+        audioPreset: AudioPresets.speech,
+        videoEncoding: VideoPresets.h540.encoding,
+        simulcast: false,
+        backupCodec: false,
       },
     });
 
@@ -560,6 +597,7 @@ export function useMeeting() {
       await room.connect(response.ws_url, response.token);
       await room.localParticipant.setMicrophoneEnabled(true);
       await room.localParticipant.setCameraEnabled(true);
+      await optimizeLocalCameraTrack(room);
 
       connectionIdRef.current =
         room.localParticipant.sid || response.connection_id || response.participant_id;
@@ -599,7 +637,7 @@ export function useMeeting() {
         ...current,
         sessionId: response.session_id,
         status: 'active',
-        isRecording: true,
+        isRecording: ENABLE_LOCAL_AUDIO_RECORDING,
         error: null,
         connectionState: ConnectionState.Connected,
         connectionMessage: null,

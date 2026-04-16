@@ -29,6 +29,8 @@ services:
               protocol: tcp
               secret: ${TURN_SECRET}
               ttl: 86400
+        redis:
+          address: redis:6379
         room:
           empty_timeout: ${LIVEKIT_ROOM_EMPTY_TIMEOUT:-300}
           departure_timeout: ${LIVEKIT_ROOM_DEPARTURE_TIMEOUT:-20}
@@ -41,6 +43,29 @@ services:
     ports:
       - "${LIVEKIT_RTC_TCP_PORT:-7881}:7881/tcp"
       - "${LIVEKIT_RTC_UDP_START:-50000}-${LIVEKIT_RTC_UDP_END:-50100}:${LIVEKIT_RTC_UDP_START:-50000}-${LIVEKIT_RTC_UDP_END:-50100}/udp"
+    networks:
+      - meeting-net
+
+  egress:
+    image: livekit/egress:latest
+    restart: unless-stopped
+    cap_add:
+      - SYS_ADMIN
+    environment:
+      EGRESS_CONFIG_BODY: |
+        api_key: ${LIVEKIT_API_KEY}
+        api_secret: ${LIVEKIT_API_SECRET}
+        ws_url: ws://livekit:7880
+        insecure: true
+        redis:
+          address: redis:6379
+        health_port: 8080
+        log_level: info
+    volumes:
+      - ./meeting_analyzer/recordings:/out/recordings
+    depends_on:
+      - redis
+      - livekit
     networks:
       - meeting-net
 
@@ -92,6 +117,7 @@ services:
       - redis
       - livekit
       - coturn
+      - egress
     networks:
       - meeting-net
 

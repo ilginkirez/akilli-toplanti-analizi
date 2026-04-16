@@ -4,6 +4,12 @@ from typing import Any, Dict
 from fastapi import APIRouter, Header, HTTPException, Request
 
 from ..services import livekit_service
+from ..services.egress_recording_service import (
+    maybe_finalize_session_recording,
+    start_audio_track_egress,
+    stop_participant_egress,
+    stop_session_egresses,
+)
 from ..services.session_store import _jsonify, _utc_now_iso, session_store
 
 router = APIRouter()
@@ -14,6 +20,24 @@ def _parse_metadata(value: str | None) -> Dict[str, Any]:
     if isinstance(parsed, dict):
         return parsed
     return {"raw": value or ""}
+
+
+def _track_kind(track_payload: Dict[str, Any]) -> str:
+    track_type = str(track_payload.get("type") or "").strip().lower()
+    source = str(track_payload.get("source") or "").strip().lower()
+    mime_type = str(track_payload.get("mimeType") or "").strip().lower()
+
+    if track_type in {"audio", "video"}:
+        return track_type
+    if mime_type.startswith("audio/"):
+        return "audio"
+    if mime_type.startswith("video/"):
+        return "video"
+    if source == "microphone":
+        return "audio"
+    if source in {"camera", "screen_share", "screen_share_audio", "screen_share_video"}:
+        return "video"
+    return ""
 
 
 @router.get("/rooms")
@@ -114,6 +138,12 @@ async def livekit_webhook(
         )
 
     elif event_name in {"participant_left", "participant_connection_aborted"} and participant:
+        await stop_participant_egress(
+            session_id=room_name,
+            participant_id=participant.identity,
+            reason=event_name,
+            run_analysis=False,
+        )
         session_store.mark_participant_left(
             session_id=room_name,
             participant_id=participant.identity,
@@ -123,7 +153,7 @@ async def livekit_webhook(
         )
 
     elif event_name == "track_published" and participant and track:
-        track_type = str(track_payload.get("type", "")).lower()
+        track_type = _track_kind(track_payload)
         source = str(track_payload.get("source", "")).lower()
         session_store.attach_stream(
             session_id=room_name,
@@ -134,11 +164,31 @@ async def livekit_webhook(
             video_source=source,
             media_type=track_type or "audio_video",
         )
+        if track_type == "audio" and source in {"", "microphone"}:
+            await start_audio_track_egress(
+                session_id=room_name,
+                participant_id=participant.identity,
+                track_id=track_payload.get("sid") or track.sid,
+                connection_id=participant.sid,
+            )
+
+    elif event_name == "track_unpublished" and participant and track:
+        track_type = _track_kind(track_payload)
+        source = str(track_payload.get("source", "")).lower()
+        if track_type == "audio" and source in {"", "microphone"}:
+            await stop_participant_egress(
+                session_id=room_name,
+                participant_id=participant.identity,
+                reason="track_unpublished",
+                run_analysis=False,
+            )
 
     elif event_name == "room_finished":
+        await stop_session_egresses(room_name, reason="room_finished")
         session = session_store.load_session(room_name)
         session["status"] = "ended"
         session["finalized_at"] = _utc_now_iso()
         session_store.save_session(room_name, session)
+        await maybe_finalize_session_recording(room_name)
 
     return {"status": "ok"}

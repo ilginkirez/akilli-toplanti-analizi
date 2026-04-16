@@ -7,6 +7,10 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException
 
+from ..services.egress_recording_service import (
+    maybe_finalize_session_recording,
+    stop_session_egresses,
+)
 from ..services import livekit_service
 from ..services.speech_analysis_service import speech_analysis_service
 from ..services.session_store import session_store
@@ -106,7 +110,7 @@ async def create_token(request_data: Dict[str, Any]):
         session_store.update_recording(
             session_id,
             {
-                "mode": "LOCAL_INDIVIDUAL",
+                "mode": "LIVEKIT_TRACK_EGRESS",
                 "status": "started",
                 "started_at": datetime.datetime.now(datetime.UTC).isoformat(),
                 "reason": None,
@@ -116,7 +120,7 @@ async def create_token(request_data: Dict[str, Any]):
         session_store.update_recording(
             session_id,
             {
-                "mode": "LOCAL_INDIVIDUAL",
+                "mode": "LIVEKIT_TRACK_EGRESS",
                 "status": recording_state.get("status") or "started",
                 "reason": None,
             },
@@ -160,6 +164,8 @@ async def get_session(session_id: str):
 
 @router.post("/{session_id}/stop")
 async def stop_session(session_id: str):
+    await stop_session_egresses(session_id, reason="session_stop")
+
     try:
         await livekit_service.delete_room(session_id)
     except Exception:
@@ -176,10 +182,7 @@ async def stop_session(session_id: str):
     )
     if has_tracks:
         try:
-            await asyncio.to_thread(
-                speech_analysis_service.analyze_session,
-                session_id,
-            )
+            await maybe_finalize_session_recording(session_id)
         except Exception:
             pass
 
