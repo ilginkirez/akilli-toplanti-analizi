@@ -503,10 +503,10 @@ export function useMeeting() {
       adaptiveStream: true,
       dynacast: true,
       audioCaptureDefaults: {
-        autoGainControl: false,
-        echoCancellation: false,
-        noiseSuppression: false,
-        voiceIsolation: false,
+        autoGainControl: true,
+        echoCancellation: true,
+        noiseSuppression: true,
+        voiceIsolation: true,
       },
       videoCaptureDefaults: {
         resolution: VideoPresets.h540.resolution,
