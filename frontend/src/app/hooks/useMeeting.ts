@@ -215,6 +215,51 @@ export function useMeeting() {
     }));
   }, []);
 
+  const syncSpeakingState = useCallback((room: Room) => {
+    setState((current) => {
+      if (current.remoteParticipants.length === 0) {
+        return current;
+      }
+
+      let changed = false;
+      const nextRemoteParticipants = current.remoteParticipants.map((participant) => {
+        const liveParticipant = room.remoteParticipants.get(participant.id);
+        if (!liveParticipant) {
+          return participant;
+        }
+
+        const nextIsSpeaking = liveParticipant.isSpeaking;
+        const nextAudioLevel = liveParticipant.audioLevel;
+        const nextLastSpokeAt = liveParticipant.lastSpokeAt?.getTime() ?? participant.lastSpokeAt;
+
+        if (
+          participant.isSpeaking === nextIsSpeaking &&
+          participant.audioLevel === nextAudioLevel &&
+          participant.lastSpokeAt === nextLastSpokeAt
+        ) {
+          return participant;
+        }
+
+        changed = true;
+        return {
+          ...participant,
+          isSpeaking: nextIsSpeaking,
+          audioLevel: nextAudioLevel,
+          lastSpokeAt: nextLastSpokeAt,
+        };
+      });
+
+      if (!changed) {
+        return current;
+      }
+
+      return {
+        ...current,
+        remoteParticipants: nextRemoteParticipants,
+      };
+    });
+  }, []);
+
   useEffect(() => {
     api.healthCheck()
       .then(() => setState((current) => ({ ...current, backendConnected: true })))
@@ -421,8 +466,8 @@ export function useMeeting() {
 
       activeSpeakerSyncTimeoutRef.current = window.setTimeout(() => {
         activeSpeakerSyncTimeoutRef.current = null;
-        syncRoomState(room);
-      }, 120);
+        syncSpeakingState(room);
+      }, 180);
     };
 
     room
@@ -568,7 +613,7 @@ export function useMeeting() {
         connectionMessage: null,
       }));
     }
-  }, [cleanupRoom, startLocalAudioRecording, syncRoomState]);
+  }, [cleanupRoom, startLocalAudioRecording, syncRoomState, syncSpeakingState]);
 
   const toggleMute = useCallback(() => {
     setState((current) => {
