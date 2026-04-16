@@ -69,15 +69,19 @@ export interface SessionStopResult {
 export interface HealthCheck {
   status: string;
   openvidu_connected: boolean;
+  livekit_connected?: boolean;
+  rtc_provider?: string;
   active_sessions: number;
   timestamp: string;
 }
 
 export interface JoinTokenResponse {
   token: string;
+  ws_url: string;
   participant_id: string;
   session_id: string;
   connection_id?: string | null;
+  provider?: string;
   server_data?: Record<string, unknown>;
   recording_status?: string | null;
   recording_id?: string | null;

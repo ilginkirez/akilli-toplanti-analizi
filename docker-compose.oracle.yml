@@ -5,34 +5,67 @@ services:
     networks:
       - meeting-net
 
-  openvidu:
-    image: openvidu/openvidu-dev:2.30.0
+  livekit:
+    image: livekit/livekit-server:1.10.1
     restart: unless-stopped
-    environment:
-      - DOMAIN_OR_PUBLIC_IP=${DOMAIN_OR_PUBLIC_IP}
-      - HTTPS_PORT=${HTTPS_PORT:-443}
-      - FORCE_PLAIN_HTTP=${FORCE_PLAIN_HTTP:-false}
-      - OPENVIDU_SECRET=${OPENVIDU_SECRET}
-      - COTURN_IP=${COTURN_IP}
-      - KMS_DOCKER_ENV_KMS_MIN_PORT=${KMS_MIN_PORT:-42000}
-      - KMS_DOCKER_ENV_KMS_MAX_PORT=${KMS_MAX_PORT:-42100}
-      - OPENVIDU_RECORDING=true
-      - OPENVIDU_RECORDING_PATH=/opt/openvidu/recordings
-      - OPENVIDU_RECORDING_AUTOSTOP_TIMEOUT=5
-      - OPENVIDU_CDR=true
-      - OPENVIDU_CDR_PATH=/opt/openvidu/cdr
-      - OPENVIDU_WEBHOOK=true
-      - OPENVIDU_WEBHOOK_ENDPOINT=${OPENVIDU_WEBHOOK_ENDPOINT:-http://backend:8000/api/openvidu/webhook}
-      - OPENVIDU_WEBHOOK_EVENTS=["sessionCreated","sessionDestroyed","participantJoined","participantLeft","webrtcConnectionCreated","webrtcConnectionDestroyed","recordingStatusChanged"]
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./meeting_analyzer/recordings:/opt/openvidu/recordings
-      - ./meeting_analyzer/cdr:/opt/openvidu/cdr
+    command:
+      - --config-body
+      - |
+        port: 7880
+        rtc:
+          tcp_port: ${LIVEKIT_RTC_TCP_PORT:-7881}
+          port_range_start: ${LIVEKIT_RTC_UDP_START:-50000}
+          port_range_end: ${LIVEKIT_RTC_UDP_END:-50100}
+          use_external_ip: true
+          allow_tcp_fallback: true
+          turn_servers:
+            - host: ${TURN_DOMAIN}
+              port: 3478
+              protocol: udp
+              secret: ${TURN_SECRET}
+              ttl: 86400
+            - host: ${TURN_DOMAIN}
+              port: 3478
+              protocol: tcp
+              secret: ${TURN_SECRET}
+              ttl: 86400
+        room:
+          empty_timeout: ${LIVEKIT_ROOM_EMPTY_TIMEOUT:-300}
+          departure_timeout: ${LIVEKIT_ROOM_DEPARTURE_TIMEOUT:-20}
+        keys:
+          ${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}
+        webhook:
+          api_key: ${LIVEKIT_API_KEY}
+          urls:
+            - http://backend:8000/api/livekit/webhook
+    ports:
+      - "${LIVEKIT_RTC_TCP_PORT:-7881}:7881/tcp"
+      - "${LIVEKIT_RTC_UDP_START:-50000}-${LIVEKIT_RTC_UDP_END:-50100}:${LIVEKIT_RTC_UDP_START:-50000}-${LIVEKIT_RTC_UDP_END:-50100}/udp"
+    networks:
+      - meeting-net
+
+  coturn:
+    image: coturn/coturn:4.6.3
+    restart: unless-stopped
+    command:
+      - -n
+      - --fingerprint
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_SECRET}
+      - --realm=${TURN_DOMAIN}
+      - --server-name=${TURN_DOMAIN}
+      - --listening-ip=0.0.0.0
+      - --external-ip=${PUBLIC_IP}
+      - --listening-port=3478
+      - --min-port=${TURN_RELAY_START:-51000}
+      - --max-port=${TURN_RELAY_END:-51100}
+      - --no-cli
+      - --no-multicast-peers
     ports:
       - "3478:3478/tcp"
       - "3478:3478/udp"
-      - "${KMS_MIN_PORT:-42000}-${KMS_MAX_PORT:-42100}:${KMS_MIN_PORT:-42000}-${KMS_MAX_PORT:-42100}/tcp"
-      - "${KMS_MIN_PORT:-42000}-${KMS_MAX_PORT:-42100}:${KMS_MIN_PORT:-42000}-${KMS_MAX_PORT:-42100}/udp"
+      - "${TURN_RELAY_START:-51000}-${TURN_RELAY_END:-51100}:${TURN_RELAY_START:-51000}-${TURN_RELAY_END:-51100}/tcp"
+      - "${TURN_RELAY_START:-51000}-${TURN_RELAY_END:-51100}:${TURN_RELAY_START:-51000}-${TURN_RELAY_END:-51100}/udp"
     networks:
       - meeting-net
 
@@ -42,9 +75,13 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      - OPENVIDU_URL=${OPENVIDU_URL:-http://openvidu:443}
-      - OPENVIDU_SECRET=${OPENVIDU_SECRET}
-      - SSL_VERIFY=${SSL_VERIFY:-false}
+      - LIVEKIT_API_URL=${LIVEKIT_API_URL:-http://livekit:7880}
+      - LIVEKIT_WS_URL=${LIVEKIT_WS_URL}
+      - LIVEKIT_API_KEY=${LIVEKIT_API_KEY}
+      - LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET}
+      - LIVEKIT_ROOM_EMPTY_TIMEOUT=${LIVEKIT_ROOM_EMPTY_TIMEOUT:-300}
+      - LIVEKIT_ROOM_DEPARTURE_TIMEOUT=${LIVEKIT_ROOM_DEPARTURE_TIMEOUT:-20}
+      - LIVEKIT_ROOM_MAX_PARTICIPANTS=${LIVEKIT_ROOM_MAX_PARTICIPANTS:-4}
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
     volumes:
@@ -53,7 +90,8 @@ services:
       - /tmp/audio:/tmp/audio
     depends_on:
       - redis
-      - openvidu
+      - livekit
+      - coturn
     networks:
       - meeting-net
 
@@ -93,15 +131,17 @@ services:
       dockerfile: Dockerfile.oracle
       args:
         VITE_API_URL: ""
+        VITE_LIVEKIT_URL: ${LIVEKIT_WS_URL}
     restart: unless-stopped
     depends_on:
       - backend
-      - openvidu
+      - livekit
     environment:
-      - DOMAIN_OR_PUBLIC_IP=${DOMAIN_OR_PUBLIC_IP}
+      - APP_DOMAIN=${APP_DOMAIN}
+      - RTC_DOMAIN=${RTC_DOMAIN}
     ports:
-      - "${GATEWAY_HTTP_PORT:-8080}:80"
-      - "${GATEWAY_HTTPS_PORT:-8443}:443"
+      - "${GATEWAY_HTTP_PORT:-80}:80"
+      - "${GATEWAY_HTTPS_PORT:-443}:443"
     volumes:
       - caddy_data:/data
       - caddy_config:/config

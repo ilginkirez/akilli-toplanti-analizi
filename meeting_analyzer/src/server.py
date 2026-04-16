@@ -2,7 +2,8 @@ from datetime import datetime, timezone
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import dataset, events, openvidu, participants, recordings, sessions
+from .routers import dataset, events, livekit, participants, recordings, sessions
+from .services import livekit_service
 from .services.session_store import session_store
 
 app = FastAPI(title="Smart Meeting API")
@@ -18,7 +19,7 @@ app.include_router(sessions.router,      prefix="/api/sessions", tags=["Sessions
 app.include_router(participants.router,  prefix="/api/participants", tags=["Participants"])
 app.include_router(recordings.router,    prefix="/api/recordings", tags=["Recordings"])
 app.include_router(events.router,        prefix="/api/sessions", tags=["Events"])
-app.include_router(openvidu.router,      prefix="/api/openvidu", tags=["OpenVidu"])
+app.include_router(livekit.router,       prefix="/api/livekit", tags=["LiveKit"])
 app.include_router(dataset.router,       prefix="/api/dataset", tags=["Dataset"])
 
 @app.get("/")
@@ -34,7 +35,9 @@ def health_check():
     )
     return {
         "status": "ok",
-        "openvidu_connected": True,
+        "openvidu_connected": False,
+        "livekit_connected": livekit_service.is_configured(),
+        "rtc_provider": "livekit",
         "active_sessions": session_count,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }

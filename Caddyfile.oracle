@@ -1,8 +1,4 @@
-http://{$DOMAIN_OR_PUBLIC_IP} {
-	redir https://{host}{uri} permanent
-}
-
-https://{$DOMAIN_OR_PUBLIC_IP} {
+{$APP_DOMAIN} {
 	encode zstd gzip
 
 	@api path /api/*
@@ -10,32 +6,13 @@ https://{$DOMAIN_OR_PUBLIC_IP} {
 		reverse_proxy backend:8000
 	}
 
-	@openvidu_ws {
-		header Connection *Upgrade*
-		header Upgrade websocket
-		query sessionId=*
-	}
-	handle @openvidu_ws {
-		reverse_proxy openvidu:443 {
-			header_up Host {http.request.host}
-			transport http {
-				versions h1
-			}
-		}
-	}
-
-	handle /openvidu* {
-		reverse_proxy openvidu:443 {
-			header_up Host {http.request.host}
-			transport http {
-				versions h1
-			}
-		}
-	}
-
 	handle {
 		root * /srv
 		try_files {path} /index.html
 		file_server
 	}
+}
+
+{$RTC_DOMAIN} {
+	reverse_proxy livekit:7880
 }

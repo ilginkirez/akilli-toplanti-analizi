@@ -7,7 +7,9 @@ RUN npm ci
 
 COPY frontend/ ./
 ARG VITE_API_URL=""
+ARG VITE_LIVEKIT_URL=""
 ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_LIVEKIT_URL=$VITE_LIVEKIT_URL
 RUN npm run build
 
 FROM caddy:2.8-alpine

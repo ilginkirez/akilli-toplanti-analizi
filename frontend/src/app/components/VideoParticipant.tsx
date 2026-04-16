@@ -23,6 +23,7 @@ export function VideoParticipant({
   isLarge = false,
 }: VideoParticipantProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     if (videoRef.current && stream && isVideoOn) {
@@ -34,6 +35,19 @@ export function VideoParticipant({
       }
     };
   }, [stream, isVideoOn]);
+
+  useEffect(() => {
+    if (audioRef.current && stream) {
+      const hasAudioTrack = stream.getAudioTracks().length > 0;
+      audioRef.current.srcObject = hasAudioTrack ? stream : null;
+    }
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.srcObject = null;
+      }
+    };
+  }, [stream]);
 
   const initials = name
     .split(' ')
@@ -53,6 +67,8 @@ export function VideoParticipant({
           : 'ring-1 ring-white/10'
       }`}
     >
+      {!isLocal && <audio ref={audioRef} autoPlay playsInline />}
+
       {/* Video veya Avatar */}
       {stream && isVideoOn ? (
         <video

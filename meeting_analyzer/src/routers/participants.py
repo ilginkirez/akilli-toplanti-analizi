@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException
 
-from ..services import openvidu_service
+from ..services import livekit_service
 from ..services.session_store import session_store
 
 router = APIRouter()
@@ -83,29 +83,25 @@ async def update_stream(participant_id: str, data: Dict[str, Any]):
         media_type=data.get("media_type"),
     )
 
-    recording_state = session_store.load_session(session_id).get("recording", {})
-    if session_store.can_start_recording(session_id):
-        try:
-            recording = await openvidu_service.start_individual_recording(
-                session_id=session_id,
-                name=recording_state.get("name") or session_id,
-            )
-            session_store.update_recording(
-                session_id,
-                {
-                    "status": recording.get("status", "started"),
-                    "recording_id": recording.get("id"),
-                    "name": recording.get("name", session_id),
-                    "started_at": datetime.datetime.now(datetime.UTC).isoformat(),
-                },
-            )
-        except Exception as exc:
-            session_store.update_recording(
-                session_id,
-                {
-                    "status": "failed",
-                    "reason": str(exc),
-                },
-            )
-
     return {"status": "stream_updated", "participant_id": participant_id}
+
+
+@router.delete("/{participant_id}")
+async def remove_participant(participant_id: str, data: Dict[str, Any]):
+    session_id = data.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id required")
+
+    try:
+        await livekit_service.remove_participant(session_id, participant_id)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    session_store.mark_participant_left(
+        session_id=session_id,
+        participant_id=participant_id,
+        left_at=data.get("left_at") or datetime.datetime.now(datetime.UTC).isoformat(),
+        reason=data.get("reason") or "removed_by_admin",
+    )
+
+    return {"status": "removed", "participant_id": participant_id}

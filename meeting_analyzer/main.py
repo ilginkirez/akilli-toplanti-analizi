@@ -10,9 +10,10 @@ Kullanım:
     python main.py --no-reload        # Reload kapalı
 
 .env örnek:
-    OPENVIDU_URL=http://localhost:4443
-    OPENVIDU_SECRET=MY_SECRET
-    SSL_VERIFY=false
+    LIVEKIT_API_URL=http://livekit:7880
+    LIVEKIT_WS_URL=wss://rtc.example.com
+    LIVEKIT_API_KEY=devkey
+    LIVEKIT_API_SECRET=devsecret
 """
 
 import argparse
@@ -49,20 +50,20 @@ def main():
         sys.exit(1)
 
     # ENV kontrolü
-    openvidu_url = os.getenv("OPENVIDU_URL", "")
-    if not openvidu_url:
+    livekit_url = os.getenv("LIVEKIT_API_URL", "")
+    if not livekit_url:
         print("=" * 65)
-        print("  UYARI: OPENVIDU_URL env değişkeni bulunamadı.")
+        print("  UYARI: LIVEKIT_API_URL env değişkeni bulunamadı.")
         print("  Backend DEMO modunda başlatılıyor.")
-        print("  OpenVidu özelliklerini kullanmak için .env dosyasını")
-        print("  oluşturun ve OPENVIDU_URL ile OPENVIDU_SECRET ekleyin.")
+        print("  LiveKit özelliklerini kullanmak için .env dosyasını")
+        print("  oluşturun ve LIVEKIT_API_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET ekleyin.")
         print("=" * 65)
 
     print("=" * 65)
     print(f"  Meeting Analyzer Backend Başlatılıyor")
     print(f"  Adres : http://{args.host}:{args.port}")
     print(f"  Docs  : http://{args.host}:{args.port}/docs")
-    print(f"  OpenVidu: {openvidu_url or 'Demo modu (bağlantı yok)'}")
+    print(f"  LiveKit: {livekit_url or 'Demo modu (bağlantı yok)'}")
     print("=" * 65)
 
     uvicorn.run(

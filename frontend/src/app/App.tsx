@@ -138,6 +138,11 @@ export default function App() {
           <span className="text-sm font-semibold tracking-wide text-gray-200">
             {meeting.sessionId}
           </span>
+          {meeting.connectionMessage && (
+            <span className="px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-200 text-[10px] font-bold tracking-wider uppercase border border-sky-500/30">
+              {meeting.connectionMessage}
+            </span>
+          )}
           {!meeting.backendConnected && (
             <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold tracking-wider uppercase border border-amber-500/30">
               Demo Modu
