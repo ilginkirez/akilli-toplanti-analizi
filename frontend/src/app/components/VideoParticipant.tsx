@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { Mic, MicOff, VideoOff, User } from 'lucide-react';
+import { Mic, MicOff, Pin, PinOff, VideoOff, User } from 'lucide-react';
 
 interface VideoParticipantProps {
   name: string;
@@ -10,6 +10,10 @@ interface VideoParticipantProps {
   isSpeaking?: boolean;
   isLocal?: boolean;
   isLarge?: boolean;
+  isPinned?: boolean;
+  showPinAction?: boolean;
+  onPinToggle?: () => void;
+  pinLabel?: string;
 }
 
 export function VideoParticipant({
@@ -21,6 +25,10 @@ export function VideoParticipant({
   isSpeaking = false,
   isLocal = false,
   isLarge = false,
+  isPinned = false,
+  showPinAction = false,
+  onPinToggle,
+  pinLabel,
 }: VideoParticipantProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -109,6 +117,26 @@ export function VideoParticipant({
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 border-2 border-emerald-400/30 rounded-xl animate-pulse" />
         </div>
+      )}
+
+      {showPinAction && onPinToggle && (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onPinToggle();
+          }}
+          className={`absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium transition ${
+            isPinned
+              ? 'border-amber-400/70 bg-amber-400/20 text-amber-100'
+              : 'border-white/15 bg-black/45 text-white/85 hover:border-white/35 hover:bg-black/65'
+          }`}
+          aria-label={pinLabel ?? (isPinned ? `${name} sabitlemesini kaldir` : `${name} sabitle`)}
+          title={pinLabel ?? (isPinned ? 'Sabitlemeyi kaldir' : 'Sabitle')}
+        >
+          {isPinned ? <PinOff size={12} /> : <Pin size={12} />}
+          <span>{isPinned ? 'Pinli' : 'Pinle'}</span>
+        </button>
       )}
 
       {/* Bottom overlay */}

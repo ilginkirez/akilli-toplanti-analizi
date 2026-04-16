@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useMeeting } from './hooks/useMeeting';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { type Participant, useMeeting } from './hooks/useMeeting';
 import { Lobby } from './components/Lobby';
 import { VideoParticipant } from './components/VideoParticipant';
 import { ControlButton } from './components/ControlButton';
@@ -20,12 +20,164 @@ import {
   ChevronUp,
 } from 'lucide-react';
 
+const ACTIVE_SPEAKER_SWITCH_DELAY_MS = 1800;
+const ACTIVE_SPEAKER_AUDIO_THRESHOLD = 0.03;
+
+function pickDominantRemoteSpeaker(participants: Participant[]): Participant | null {
+  const eligibleParticipants = participants
+    .filter(
+      (participant) =>
+        participant.isSpeaking &&
+        !participant.isMuted &&
+        participant.audioLevel >= ACTIVE_SPEAKER_AUDIO_THRESHOLD,
+    )
+    .sort((left, right) => {
+      if (right.audioLevel !== left.audioLevel) {
+        return right.audioLevel - left.audioLevel;
+      }
+
+      return (right.lastSpokeAt ?? 0) - (left.lastSpokeAt ?? 0);
+    });
+
+  return eligibleParticipants[0] ?? null;
+}
+
 export default function App() {
   const meeting = useMeeting();
-  
+
   const [viewMode, setViewMode] = useState<ViewMode>('speaker');
   const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [pinnedParticipantId, setPinnedParticipantId] = useState<string | null>(null);
+  const [focusedParticipantId, setFocusedParticipantId] = useState<string | null>(null);
+  const pendingSpeakerTimerRef = useRef<number | null>(null);
+  const pendingSpeakerIdRef = useRef<string | null>(null);
+
+  // Active meeting screen
+  const { localParticipant, remoteParticipants } = meeting;
+  const allParticipants = useMemo(
+    () => [localParticipant, ...remoteParticipants].filter(Boolean) as Participant[],
+    [localParticipant, remoteParticipants],
+  );
+  const remoteCount = remoteParticipants.length;
+
+  useEffect(() => {
+    return () => {
+      if (pendingSpeakerTimerRef.current !== null) {
+        window.clearTimeout(pendingSpeakerTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!pinnedParticipantId) {
+      return;
+    }
+
+    const pinnedStillExists = allParticipants.some((participant) => participant.id === pinnedParticipantId);
+    if (!pinnedStillExists) {
+      setPinnedParticipantId(null);
+    }
+  }, [allParticipants, pinnedParticipantId]);
+
+  useEffect(() => {
+    if (pinnedParticipantId) {
+      if (pendingSpeakerTimerRef.current !== null) {
+        window.clearTimeout(pendingSpeakerTimerRef.current);
+        pendingSpeakerTimerRef.current = null;
+      }
+      pendingSpeakerIdRef.current = null;
+      setFocusedParticipantId((current) => (current === pinnedParticipantId ? current : pinnedParticipantId));
+      return;
+    }
+
+    if (remoteCount === 1) {
+      if (pendingSpeakerTimerRef.current !== null) {
+        window.clearTimeout(pendingSpeakerTimerRef.current);
+        pendingSpeakerTimerRef.current = null;
+      }
+      pendingSpeakerIdRef.current = null;
+      const directPeer = remoteParticipants[0];
+      setFocusedParticipantId((current) => (current === directPeer.id ? current : directPeer.id));
+      return;
+    }
+
+    if (remoteCount === 0) {
+      if (pendingSpeakerTimerRef.current !== null) {
+        window.clearTimeout(pendingSpeakerTimerRef.current);
+        pendingSpeakerTimerRef.current = null;
+      }
+      pendingSpeakerIdRef.current = null;
+      setFocusedParticipantId(localParticipant?.id ?? null);
+      return;
+    }
+
+    const dominantRemoteSpeaker = pickDominantRemoteSpeaker(remoteParticipants);
+    if (!dominantRemoteSpeaker) {
+      if (pendingSpeakerTimerRef.current !== null) {
+        window.clearTimeout(pendingSpeakerTimerRef.current);
+        pendingSpeakerTimerRef.current = null;
+      }
+      pendingSpeakerIdRef.current = null;
+      setFocusedParticipantId((current) => {
+        const existingRemote = remoteParticipants.find((participant) => participant.id === current);
+        if (existingRemote) {
+          return current;
+        }
+
+        return remoteParticipants[0]?.id ?? null;
+      });
+      return;
+    }
+
+    setFocusedParticipantId((current) => {
+      if (current === dominantRemoteSpeaker.id) {
+        if (pendingSpeakerTimerRef.current !== null) {
+          window.clearTimeout(pendingSpeakerTimerRef.current);
+          pendingSpeakerTimerRef.current = null;
+        }
+        pendingSpeakerIdRef.current = null;
+        return current;
+      }
+
+      const currentIsEligibleRemote = remoteParticipants.some((participant) => participant.id === current);
+      if (!currentIsEligibleRemote) {
+        return remoteParticipants[0]?.id ?? null;
+      }
+
+      if (pendingSpeakerIdRef.current === dominantRemoteSpeaker.id) {
+        return current;
+      }
+
+      if (pendingSpeakerTimerRef.current !== null) {
+        window.clearTimeout(pendingSpeakerTimerRef.current);
+      }
+      pendingSpeakerIdRef.current = dominantRemoteSpeaker.id;
+      pendingSpeakerTimerRef.current = window.setTimeout(() => {
+        setFocusedParticipantId((previous) =>
+          previous === dominantRemoteSpeaker.id ? previous : dominantRemoteSpeaker.id,
+        );
+        pendingSpeakerIdRef.current = null;
+        pendingSpeakerTimerRef.current = null;
+      }, ACTIVE_SPEAKER_SWITCH_DELAY_MS);
+
+      return current;
+    });
+  }, [localParticipant?.id, pinnedParticipantId, remoteCount, remoteParticipants]);
+
+  const focusedParticipant =
+    allParticipants.find((participant) => participant.id === focusedParticipantId) ??
+    (remoteParticipants[0] ?? localParticipant);
+
+  const togglePinnedParticipant = (participantId: string) => {
+    setPinnedParticipantId((current) => (current === participantId ? null : participantId));
+  };
+
+  const speakerStripParticipants = remoteParticipants.filter(
+    (participant) => participant.id !== focusedParticipant?.id,
+  );
+  const shouldShowLocalPreview =
+    Boolean(localParticipant) && localParticipant?.id !== focusedParticipant?.id;
 
   // If we are not in an active meeting, show the Lobby screen
   if (meeting.status === 'idle' || meeting.status === 'joining' || meeting.status === 'ended') {
@@ -39,18 +191,8 @@ export default function App() {
     );
   }
 
-  // Active meeting screen
-  const { localParticipant, remoteParticipants } = meeting;
-  
-  // Speaker view logic (active speaker is main)
-  const activeSpeaker = [...remoteParticipants, localParticipant].find(p => p?.isSpeaking) || localParticipant;
-  
-  const otherParticipants = remoteParticipants;
-
   const renderVideoContent = () => {
     if (viewMode === 'gallery') {
-      const allParticipants = [localParticipant, ...remoteParticipants].filter(Boolean);
-      
       // Calculate a good grid layout based on count
       const count = allParticipants.length;
       let gridClass = 'grid-cols-1';
@@ -70,6 +212,9 @@ export default function App() {
                   isVideoOn={p.isVideoOn}
                   isSpeaking={p.isSpeaking}
                   isLocal={p.id === localParticipant?.id}
+                  isPinned={p.id === pinnedParticipantId}
+                  showPinAction={true}
+                  onPinToggle={() => togglePinnedParticipant(p.id)}
                 />
               </div>
             ))}
@@ -82,9 +227,9 @@ export default function App() {
     return (
       <div className="flex-1 flex flex-col p-4 md:p-6 gap-4">
         {/* Top Strip Thumbnails */}
-        {otherParticipants.length > 0 && (
+        {speakerStripParticipants.length > 0 && (
           <div className="flex justify-center gap-3 md:gap-4 overflow-x-auto pb-2 min-h-[140px] max-h-[160px]">
-            {otherParticipants.map((p) => (
+            {speakerStripParticipants.map((p) => (
               <div key={p.id} className="w-48 h-full flex-shrink-0">
                 <VideoParticipant
                   name={p.name}
@@ -92,6 +237,9 @@ export default function App() {
                   isMuted={p.isMuted}
                   isVideoOn={p.isVideoOn}
                   isSpeaking={p.isSpeaking}
+                  isPinned={p.id === pinnedParticipantId}
+                  showPinAction={true}
+                  onPinToggle={() => togglePinnedParticipant(p.id)}
                 />
               </div>
             ))}
@@ -100,17 +248,36 @@ export default function App() {
 
         {/* Main Speaker Video */}
         <div className="flex-1 flex items-center justify-center min-h-0">
-          <div className="w-full h-full max-w-6xl rounded-2xl overflow-hidden shadow-2xl relative">
-            {activeSpeaker && (
+          <div className="w-full h-full max-w-6xl rounded-2xl overflow-hidden shadow-2xl relative bg-black">
+            {focusedParticipant && (
               <VideoParticipant
-                name={activeSpeaker.name}
-                stream={activeSpeaker.stream}
-                isMuted={activeSpeaker.isMuted}
-                isVideoOn={activeSpeaker.isVideoOn}
-                isSpeaking={activeSpeaker.isSpeaking}
-                isLocal={activeSpeaker.id === localParticipant?.id}
+                key={focusedParticipant.id}
+                name={focusedParticipant.name}
+                stream={focusedParticipant.stream}
+                isMuted={focusedParticipant.isMuted}
+                isVideoOn={focusedParticipant.isVideoOn}
+                isSpeaking={focusedParticipant.isSpeaking}
+                isLocal={focusedParticipant.id === localParticipant?.id}
                 isLarge={true}
+                isPinned={focusedParticipant.id === pinnedParticipantId}
+                showPinAction={true}
+                onPinToggle={() => togglePinnedParticipant(focusedParticipant.id)}
               />
+            )}
+            {shouldShowLocalPreview && localParticipant && (
+              <div className="absolute bottom-4 right-4 z-10 w-32 sm:w-40 md:w-48 aspect-[4/3] rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-black/80 backdrop-blur-sm transition-all duration-300">
+                <VideoParticipant
+                  name={localParticipant.name}
+                  stream={localParticipant.stream}
+                  isMuted={localParticipant.isMuted}
+                  isVideoOn={localParticipant.isVideoOn}
+                  isSpeaking={localParticipant.isSpeaking}
+                  isLocal={true}
+                  isPinned={localParticipant.id === pinnedParticipantId}
+                  showPinAction={true}
+                  onPinToggle={() => togglePinnedParticipant(localParticipant.id)}
+                />
+              </div>
             )}
           </div>
         </div>
@@ -122,11 +289,13 @@ export default function App() {
   const mappedParticipants = [localParticipant, ...remoteParticipants]
     .filter(Boolean)
     .map(p => ({
-      id: parseInt(p!.id) || Math.floor(Math.random() * 10000), // temp fallback id
+      id: p!.id,
       name: p!.name,
       imageUrl: '', // We don't have images in the real participants yet, using avatar initials
       isMuted: p!.isMuted,
       isVideoOn: p!.isVideoOn,
+      isPinned: p!.id === pinnedParticipantId,
+      isLocal: p!.id === localParticipant?.id,
     }));
 
   return (
@@ -166,6 +335,7 @@ export default function App() {
              <ParticipantsPanel
               onClose={() => setIsParticipantsOpen(false)}
               participants={mappedParticipants}
+              onPinToggle={togglePinnedParticipant}
              />
           </div>
         )}

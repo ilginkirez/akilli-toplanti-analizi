@@ -18,6 +18,8 @@ export interface Participant {
   isMuted: boolean;
   isVideoOn: boolean;
   isSpeaking: boolean;
+  audioLevel: number;
+  lastSpokeAt: number | null;
   stream: MediaStream | null;
   audioTrack: MediaStreamTrack | null;
   videoTrack: MediaStreamTrack | null;
@@ -76,6 +78,8 @@ function buildParticipantModel(participant: LiveKitParticipant): Participant {
     isMuted: !participant.isMicrophoneEnabled || !audioTrack,
     isVideoOn: participant.isCameraEnabled && Boolean(videoTrack),
     isSpeaking: participant.isSpeaking,
+    audioLevel: participant.audioLevel,
+    lastSpokeAt: participant.lastSpokeAt?.getTime() ?? null,
     stream: tracks.length > 0 ? new MediaStream(tracks) : null,
     audioTrack,
     videoTrack,
