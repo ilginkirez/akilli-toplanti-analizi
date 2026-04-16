@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { OpenVidu, Publisher, Session } from 'openvidu-browser';
+import {
+  ConnectionState,
+  Room,
+  RoomEvent,
+  Track,
+  VideoPresets,
+  type Participant as LiveKitParticipant,
+} from 'livekit-client';
 
 import * as api from '../services/api';
 
@@ -27,62 +34,90 @@ export interface MeetingState {
   isRecording: boolean;
   error: string | null;
   backendConnected: boolean;
+  connectionState: ConnectionState;
+  connectionMessage: string | null;
 }
 
-interface ParsedConnectionData {
-  participantId: string;
-  displayName: string;
-  clientData: Record<string, unknown>;
-  serverData: Record<string, unknown>;
+function parseMetadata(metadata?: string): Record<string, unknown> {
+  if (!metadata) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(metadata);
+    return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
 }
 
-function parseConnectionData(raw: string, fallbackConnectionId: string): ParsedConnectionData {
-  const [clientRaw = '', serverRaw = ''] = raw.split('%/%');
+function buildParticipantModel(participant: LiveKitParticipant): Participant {
+  const metadata = parseMetadata(participant.metadata);
+  const audioPublication = participant.getTrackPublication(Track.Source.Microphone);
+  const videoPublication =
+    participant.getTrackPublication(Track.Source.Camera) ??
+    participant.getTrackPublication(Track.Source.ScreenShare);
 
-  const parsePart = (value: string): Record<string, unknown> => {
-    if (!value) {
-      return {};
-    }
-    try {
-      const parsed = JSON.parse(value);
-      return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, unknown> : {};
-    } catch {
-      return { raw: value };
-    }
-  };
-
-  const clientData = parsePart(clientRaw);
-  const serverData = parsePart(serverRaw);
-  const participantId =
-    (serverData['participant_id'] as string | undefined) ??
-    (clientData['participant_id'] as string | undefined) ??
-    fallbackConnectionId;
-  const displayName =
-    (clientData['display_name'] as string | undefined) ??
-    (serverData['display_name'] as string | undefined) ??
-    (typeof clientData['raw'] === 'string' ? clientData['raw'] : undefined) ??
-    'Unknown';
+  const audioTrack = audioPublication?.audioTrack?.mediaStreamTrack ?? null;
+  const videoTrack = videoPublication?.videoTrack?.mediaStreamTrack ?? null;
+  const tracks = [audioTrack, videoTrack].filter(
+    (track): track is MediaStreamTrack => track !== null,
+  );
 
   return {
-    participantId,
-    displayName,
-    clientData,
-    serverData,
+    id: participant.identity,
+    name:
+      participant.name ||
+      (metadata['display_name'] as string | undefined) ||
+      participant.identity ||
+      'Unknown',
+    connectionId: participant.sid || null,
+    streamId: videoPublication?.trackSid ?? audioPublication?.trackSid ?? null,
+    isMuted: !participant.isMicrophoneEnabled || !audioTrack,
+    isVideoOn: participant.isCameraEnabled && Boolean(videoTrack),
+    isSpeaking: participant.isSpeaking,
+    stream: tracks.length > 0 ? new MediaStream(tracks) : null,
+    audioTrack,
+    videoTrack,
   };
 }
 
 function getDeviceInfo() {
   const ua = navigator.userAgent;
   return {
-    browser: /Chrome/i.test(ua) ? 'chrome' : /Firefox/i.test(ua) ? 'firefox' : /Safari/i.test(ua) ? 'safari' : 'other',
+    browser: /Chrome/i.test(ua)
+      ? 'chrome'
+      : /Firefox/i.test(ua)
+        ? 'firefox'
+        : /Safari/i.test(ua)
+          ? 'safari'
+          : 'other',
     os:
-      /Windows/i.test(ua) ? 'windows' :
-      /Mac OS X/i.test(ua) ? 'macos' :
-      /Android/i.test(ua) ? 'android' :
-      /iPhone|iPad/i.test(ua) ? 'ios' :
-      'other',
+      /Windows/i.test(ua)
+        ? 'windows'
+        : /Mac OS X/i.test(ua)
+          ? 'macos'
+          : /Android/i.test(ua)
+            ? 'android'
+            : /iPhone|iPad/i.test(ua)
+              ? 'ios'
+              : 'other',
     device_type: /Mobi|Android/i.test(ua) ? 'mobile' : 'desktop',
   };
+}
+
+function pickRecordingMimeType(): string {
+  if (typeof MediaRecorder === 'undefined') {
+    return '';
+  }
+
+  const candidates = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+  ];
+
+  return candidates.find((item) => MediaRecorder.isTypeSupported(item)) ?? '';
 }
 
 export function useMeeting() {
@@ -97,19 +132,155 @@ export function useMeeting() {
     isRecording: false,
     error: null,
     backendConnected: false,
+    connectionState: ConnectionState.Disconnected,
+    connectionMessage: null,
   });
 
-  const OV = useRef<OpenVidu | null>(null);
-  const session = useRef<Session | null>(null);
-  const publisherRef = useRef<Publisher | null>(null);
+  const roomRef = useRef<Room | null>(null);
   const sessionIdRef = useRef<string | null>(null);
   const participantIdRef = useRef<string | null>(null);
   const connectionIdRef = useRef<string | null>(null);
+  const isLeavingRef = useRef(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingTrackRef = useRef<MediaStreamTrack | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const recordingStartedAtRef = useRef<string | null>(null);
+
+  const syncRoomState = useCallback((room: Room) => {
+    const localParticipant = buildParticipantModel(room.localParticipant);
+    const remoteParticipants = Array.from(room.remoteParticipants.values()).map(buildParticipantModel);
+
+    setState((current) => ({
+      ...current,
+      localParticipant,
+      remoteParticipants,
+      isMuted: localParticipant.isMuted,
+      isVideoOn: localParticipant.isVideoOn,
+      isScreenSharing: Boolean(
+        room.localParticipant.getTrackPublication(Track.Source.ScreenShare)?.track,
+      ),
+      connectionState: room.state,
+      connectionMessage:
+        room.state === ConnectionState.Reconnecting ||
+        room.state === ConnectionState.SignalReconnecting
+          ? 'Baglanti yeniden kuruluyor...'
+          : null,
+    }));
+  }, []);
 
   useEffect(() => {
     api.healthCheck()
       .then(() => setState((current) => ({ ...current, backendConnected: true })))
       .catch(() => setState((current) => ({ ...current, backendConnected: false })));
+  }, []);
+
+  const cleanupRoom = useCallback(() => {
+    roomRef.current = null;
+    sessionIdRef.current = null;
+    participantIdRef.current = null;
+    connectionIdRef.current = null;
+  }, []);
+
+  const startLocalAudioRecording = useCallback(async (room: Room) => {
+    if (typeof MediaRecorder === 'undefined' || mediaRecorderRef.current) {
+      return;
+    }
+
+    const microphonePublication = room.localParticipant.getTrackPublication(Track.Source.Microphone);
+    const mediaStreamTrack = microphonePublication?.audioTrack?.mediaStreamTrack;
+    if (!mediaStreamTrack) {
+      return;
+    }
+
+    const clonedTrack = mediaStreamTrack.clone();
+    const mimeType = pickRecordingMimeType();
+    const recorder = mimeType
+      ? new MediaRecorder(new MediaStream([clonedTrack]), { mimeType })
+      : new MediaRecorder(new MediaStream([clonedTrack]));
+
+    recordedChunksRef.current = [];
+    recordingTrackRef.current = clonedTrack;
+    recordingStartedAtRef.current = new Date().toISOString();
+
+    recorder.addEventListener('dataavailable', (event) => {
+      if (event.data.size > 0) {
+        recordedChunksRef.current.push(event.data);
+      }
+    });
+
+    recorder.start(1000);
+    mediaRecorderRef.current = recorder;
+    setState((current) => ({ ...current, isRecording: true }));
+  }, []);
+
+  const stopAndUploadLocalAudioRecording = useCallback(async () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder) {
+      return;
+    }
+
+    const participantId = participantIdRef.current;
+    const sessionId = sessionIdRef.current;
+    const connectionId = connectionIdRef.current;
+    const room = roomRef.current;
+    const startedAt = recordingStartedAtRef.current;
+
+    mediaRecorderRef.current = null;
+    recordingStartedAtRef.current = null;
+
+    const recordingTrack = recordingTrackRef.current;
+    recordingTrackRef.current = null;
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      recorder.addEventListener(
+        'stop',
+        () => {
+          const type = recorder.mimeType || 'audio/webm';
+          const output =
+            recordedChunksRef.current.length > 0
+              ? new Blob(recordedChunksRef.current, { type })
+              : null;
+          recordedChunksRef.current = [];
+          resolve(output);
+        },
+        { once: true },
+      );
+
+      if (recorder.state !== 'inactive') {
+        recorder.stop();
+      } else {
+        resolve(null);
+      }
+    });
+
+    if (recordingTrack) {
+      recordingTrack.stop();
+    }
+
+    if (!blob || !participantId || !sessionId) {
+      setState((current) => ({ ...current, isRecording: false }));
+      return;
+    }
+
+    try {
+      const microphonePublication =
+        room?.localParticipant.getTrackPublication(Track.Source.Microphone) ?? null;
+      await api.uploadParticipantRecording({
+        session_id: sessionId,
+        participant_id: participantId,
+        connection_id: connectionId,
+        stream_id: microphonePublication?.trackSid ?? connectionId ?? participantId,
+        started_at: startedAt,
+        ended_at: new Date().toISOString(),
+        mime_type: blob.type || recorder.mimeType || 'audio/webm',
+        device_label: navigator.userAgent,
+        file: blob,
+      });
+    } catch (error) {
+      console.warn('uploadParticipantRecording failed', error);
+    } finally {
+      setState((current) => ({ ...current, isRecording: false }));
+    }
   }, []);
 
   const leaveMeeting = useCallback(async () => {
@@ -132,16 +303,19 @@ export function useMeeting() {
       }
     }
 
-    if (session.current) {
-      session.current.disconnect();
-      session.current = null;
+    try {
+      await stopAndUploadLocalAudioRecording();
+    } catch (error) {
+      console.warn('stopAndUploadLocalAudioRecording failed', error);
     }
 
-    OV.current = null;
-    publisherRef.current = null;
-    sessionIdRef.current = null;
-    participantIdRef.current = null;
-    connectionIdRef.current = null;
+    isLeavingRef.current = true;
+
+    if (roomRef.current) {
+      roomRef.current.disconnect();
+    }
+
+    cleanupRoom();
 
     setState((current) => ({
       sessionId: null,
@@ -154,201 +328,188 @@ export function useMeeting() {
       isRecording: false,
       error: null,
       backendConnected: current.backendConnected,
+      connectionState: ConnectionState.Disconnected,
+      connectionMessage: null,
     }));
-  }, []);
+  }, [cleanupRoom, stopAndUploadLocalAudioRecording]);
 
   const joinMeeting = useCallback(async (sessionIdStr: string, participantName: string) => {
-    setState((current) => ({ ...current, status: 'joining', error: null }));
+    setState((current) => ({
+      ...current,
+      status: 'joining',
+      error: null,
+      connectionState: ConnectionState.Connecting,
+      connectionMessage: 'LiveKit baglantisi hazirlaniyor...',
+    }));
 
-    try {
-      OV.current = new OpenVidu();
-      session.current = OV.current.initSession();
+    const room = new Room({
+      adaptiveStream: true,
+      dynacast: true,
+      videoCaptureDefaults: {
+        resolution: VideoPresets.h720.resolution,
+      },
+    });
 
-      session.current.on('streamCreated', (event) => {
-        const subscriber = session.current!.subscribe(event.stream, undefined);
-        const connectionData = parseConnectionData(
-          event.stream.connection.data,
-          event.stream.connection.connectionId,
-        );
-        const mediaStream = event.stream.getMediaStream();
-        const audioTracks = mediaStream?.getAudioTracks() ?? [];
-        const videoTracks = mediaStream?.getVideoTracks() ?? [];
+    roomRef.current = room;
+    isLeavingRef.current = false;
 
-        const newParticipant: Participant = {
-          id: connectionData.participantId,
-          name: connectionData.displayName,
-          connectionId: event.stream.connection.connectionId,
-          streamId: event.stream.streamId,
-          isMuted: !event.stream.audioActive,
-          isVideoOn: event.stream.videoActive,
-          isSpeaking: false,
-          stream: mediaStream ?? null,
-          audioTrack: audioTracks[0] || null,
-          videoTrack: videoTracks[0] || null,
-        };
+    const handleStateRefresh = () => syncRoomState(room);
 
-        setState((current) => {
-          if (current.remoteParticipants.some((participant) => participant.id === newParticipant.id)) {
-            return current;
-          }
-          return {
-            ...current,
-            remoteParticipants: [...current.remoteParticipants, newParticipant],
-          };
-        });
-
-        subscriber.on('publisherStartSpeaking', () => {
-          setState((current) => ({
-            ...current,
-            remoteParticipants: current.remoteParticipants.map((participant) =>
-              participant.id === newParticipant.id ? { ...participant, isSpeaking: true } : participant
-            ),
-          }));
-        });
-        subscriber.on('publisherStopSpeaking', () => {
-          setState((current) => ({
-            ...current,
-            remoteParticipants: current.remoteParticipants.map((participant) =>
-              participant.id === newParticipant.id ? { ...participant, isSpeaking: false } : participant
-            ),
-          }));
-        });
-      });
-
-      session.current.on('streamDestroyed', (event) => {
-        const connectionData = parseConnectionData(
-          event.stream.connection.data,
-          event.stream.connection.connectionId,
-        );
+    room
+      .on(RoomEvent.Connected, () => {
+        syncRoomState(room);
         setState((current) => ({
           ...current,
-          remoteParticipants: current.remoteParticipants.filter(
-            (participant) => participant.id !== connectionData.participantId,
-          ),
+          status: 'active',
+          connectionState: ConnectionState.Connected,
+          connectionMessage: null,
+        }));
+      })
+      .on(RoomEvent.ParticipantConnected, handleStateRefresh)
+      .on(RoomEvent.ParticipantDisconnected, handleStateRefresh)
+      .on(RoomEvent.TrackSubscribed, handleStateRefresh)
+      .on(RoomEvent.TrackUnsubscribed, handleStateRefresh)
+      .on(RoomEvent.TrackMuted, handleStateRefresh)
+      .on(RoomEvent.TrackUnmuted, handleStateRefresh)
+      .on(RoomEvent.LocalTrackPublished, handleStateRefresh)
+      .on(RoomEvent.LocalTrackUnpublished, handleStateRefresh)
+      .on(RoomEvent.ActiveSpeakersChanged, handleStateRefresh)
+      .on(RoomEvent.ParticipantMetadataChanged, handleStateRefresh)
+      .on(RoomEvent.ParticipantNameChanged, handleStateRefresh)
+      .on(RoomEvent.ConnectionStateChanged, () => {
+        setState((current) => ({
+          ...current,
+          connectionState: room.state,
+        }));
+        syncRoomState(room);
+      })
+      .on(RoomEvent.Reconnecting, () => {
+        setState((current) => ({
+          ...current,
+          connectionState: ConnectionState.Reconnecting,
+          connectionMessage: 'Medya baglantisi yeniden kuruluyor...',
+        }));
+      })
+      .on(RoomEvent.SignalReconnecting, () => {
+        setState((current) => ({
+          ...current,
+          connectionState: ConnectionState.SignalReconnecting,
+          connectionMessage: 'Sinyallesme baglantisi yeniden kuruluyor...',
+        }));
+      })
+      .on(RoomEvent.Reconnected, () => {
+        syncRoomState(room);
+        setState((current) => ({
+          ...current,
+          connectionState: ConnectionState.Connected,
+          connectionMessage: null,
+        }));
+      })
+      .on(RoomEvent.Disconnected, (reason) => {
+        if (isLeavingRef.current) {
+          return;
+        }
+
+        cleanupRoom();
+
+        setState((current) => ({
+          ...current,
+          status: 'ended',
+          localParticipant: null,
+          remoteParticipants: [],
+          connectionState: ConnectionState.Disconnected,
+          connectionMessage: null,
+          error: `LiveKit baglantisi kapandi${reason ? `: ${String(reason)}` : ''}`,
         }));
       });
 
-      const deviceInfo = getDeviceInfo();
-
+    try {
       const response = await api.request<api.JoinTokenResponse>('/api/sessions/token', {
         method: 'POST',
         body: JSON.stringify({
           session_id: sessionIdStr,
           display_name: participantName,
-          device_info: deviceInfo,
+          device_info: getDeviceInfo(),
         }),
       });
 
       participantIdRef.current = response.participant_id;
       sessionIdRef.current = response.session_id;
 
-      const clientData = {
-        participant_id: response.participant_id,
-        display_name: participantName,
-      };
+      room.prepareConnection(response.ws_url, response.token);
+      await room.connect(response.ws_url, response.token);
+      await room.localParticipant.setMicrophoneEnabled(true);
+      await room.localParticipant.setCameraEnabled(true);
 
-      await session.current.connect(response.token, clientData);
-
-      connectionIdRef.current = session.current.connection.connectionId;
+      connectionIdRef.current =
+        room.localParticipant.sid || response.connection_id || response.participant_id;
 
       await api.registerParticipantConnection(response.participant_id, {
         session_id: response.session_id,
-        connection_id: session.current.connection.connectionId,
-        client_data: clientData,
+        connection_id: connectionIdRef.current,
+        client_data: { display_name: participantName },
         server_data: response.server_data,
         connected_at: new Date().toISOString(),
       });
 
-      const publisher = await OV.current.initPublisherAsync(undefined, {
-        audioSource: undefined,
-        videoSource: undefined,
-        publishAudio: true,
-        publishVideo: true,
-        resolution: '1280x720',
-        frameRate: 30,
-        insertMode: 'APPEND',
-        mirror: false,
-      });
+      syncRoomState(room);
 
-      publisherRef.current = publisher;
-      await session.current.publish(publisher);
-
-      publisher.on('publisherStartSpeaking', () => {
-        setState((current) =>
-          current.localParticipant
-            ? {
-                ...current,
-                localParticipant: { ...current.localParticipant, isSpeaking: true },
-              }
-            : current
-        );
-      });
-      publisher.on('publisherStopSpeaking', () => {
-        setState((current) =>
-          current.localParticipant
-            ? {
-                ...current,
-                localParticipant: { ...current.localParticipant, isSpeaking: false },
-              }
-            : current
-        );
-      });
-
-      const mediaStream = publisher.stream.getMediaStream();
-      const audioTracks = mediaStream?.getAudioTracks() ?? [];
-      const videoTracks = mediaStream?.getVideoTracks() ?? [];
+      const cameraPublication = room.localParticipant.getTrackPublication(Track.Source.Camera);
+      const microphonePublication = room.localParticipant.getTrackPublication(Track.Source.Microphone);
+      const primaryTrackSid =
+        cameraPublication?.trackSid ??
+        microphonePublication?.trackSid ??
+        connectionIdRef.current;
 
       await api.updateParticipantStream(response.participant_id, {
         session_id: response.session_id,
-        connection_id: session.current.connection.connectionId,
-        stream_id: publisher.stream.streamId,
-        has_audio: true,
-        has_video: true,
-        video_source: 'CAMERA',
-        media_type: 'publisher',
-        client_data: clientData,
+        connection_id: connectionIdRef.current,
+        stream_id: primaryTrackSid,
+        has_audio: Boolean(microphonePublication?.track),
+        has_video: Boolean(cameraPublication?.track),
+        video_source: cameraPublication?.track ? 'CAMERA' : 'NONE',
+        media_type: 'livekit_participant',
+        client_data: { display_name: participantName },
         server_data: response.server_data,
       });
 
-      const localParticipant: Participant = {
-        id: response.participant_id,
-        name: participantName,
-        connectionId: session.current.connection.connectionId,
-        streamId: publisher.stream.streamId,
-        isMuted: false,
-        isVideoOn: true,
-        isSpeaking: false,
-        stream: mediaStream ?? null,
-        audioTrack: audioTracks[0] || null,
-        videoTrack: videoTracks[0] || null,
-      };
+      await startLocalAudioRecording(room);
 
       setState((current) => ({
         ...current,
         sessionId: response.session_id,
         status: 'active',
-        localParticipant,
-        isRecording: response.recording_status === 'started' || response.recording_status === 'starting',
+        isRecording: true,
         error: null,
+        connectionState: ConnectionState.Connected,
+        connectionMessage: null,
       }));
     } catch (error: any) {
       console.error(error);
+      isLeavingRef.current = true;
+      room.disconnect();
+      cleanupRoom();
+
       setState((current) => ({
         ...current,
         status: 'idle',
-        error: error.message || 'Toplantiya katilinamadi (OpenVidu baglanti hatasi)',
+        error: error.message || 'Toplantiya katilinamadi (LiveKit baglanti hatasi)',
+        connectionState: ConnectionState.Disconnected,
+        connectionMessage: null,
       }));
     }
-  }, []);
+  }, [cleanupRoom, startLocalAudioRecording, syncRoomState]);
 
   const toggleMute = useCallback(() => {
     setState((current) => {
-      if (!publisherRef.current || !current.localParticipant) {
+      const room = roomRef.current;
+      if (!room || !current.localParticipant) {
         return current;
       }
 
       const nextMuted = !current.isMuted;
-      publisherRef.current.publishAudio(!nextMuted);
+      void room.localParticipant.setMicrophoneEnabled(!nextMuted);
+
       return {
         ...current,
         isMuted: nextMuted,
@@ -359,12 +520,14 @@ export function useMeeting() {
 
   const toggleVideo = useCallback(() => {
     setState((current) => {
-      if (!publisherRef.current || !current.localParticipant) {
+      const room = roomRef.current;
+      if (!room || !current.localParticipant) {
         return current;
       }
 
       const nextVideoOn = !current.isVideoOn;
-      publisherRef.current.publishVideo(nextVideoOn);
+      void room.localParticipant.setCameraEnabled(nextVideoOn);
+
       return {
         ...current,
         isVideoOn: nextVideoOn,
@@ -375,8 +538,14 @@ export function useMeeting() {
 
   useEffect(() => {
     return () => {
-      if (session.current) {
-        session.current.disconnect();
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+      if (recordingTrackRef.current) {
+        recordingTrackRef.current.stop();
+      }
+      if (roomRef.current) {
+        roomRef.current.disconnect();
       }
     };
   }, []);

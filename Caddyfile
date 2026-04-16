@@ -1,0 +1,23 @@
+:80 {
+    encode zstd gzip
+
+    @api path /api/*
+    handle @api {
+        reverse_proxy backend:8000
+    }
+
+    handle /openvidu* {
+        reverse_proxy https://openvidu:4443 {
+            header_up Host {http.request.host}
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
+
+    handle {
+        root * /srv
+        try_files {path} /index.html
+        file_server
+    }
+}

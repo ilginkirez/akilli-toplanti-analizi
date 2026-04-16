@@ -69,15 +69,19 @@ export interface SessionStopResult {
 export interface HealthCheck {
   status: string;
   openvidu_connected: boolean;
+  livekit_connected?: boolean;
+  rtc_provider?: string;
   active_sessions: number;
   timestamp: string;
 }
 
 export interface JoinTokenResponse {
   token: string;
+  ws_url: string;
   participant_id: string;
   session_id: string;
   connection_id?: string | null;
+  provider?: string;
   server_data?: Record<string, unknown>;
   recording_status?: string | null;
   recording_id?: string | null;
@@ -90,6 +94,21 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
   const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json' },
     ...options,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`API Error ${res.status}: ${text}`);
+  }
+
+  return res.json();
+}
+
+export async function uploadRequest<T>(path: string, body: FormData): Promise<T> {
+  const url = API_BASE ? `${API_BASE}${path}` : path;
+  const res = await fetch(url, {
+    method: 'POST',
+    body,
   });
 
   if (!res.ok) {
@@ -263,4 +282,41 @@ export async function leaveParticipant(
     method: 'PATCH',
     body: JSON.stringify(payload),
   });
+}
+
+export async function uploadParticipantRecording(payload: {
+  session_id: string;
+  participant_id: string;
+  connection_id?: string | null;
+  stream_id?: string | null;
+  started_at?: string | null;
+  ended_at?: string | null;
+  mime_type?: string | null;
+  device_label?: string | null;
+  file: Blob;
+  filename?: string;
+}): Promise<{
+  status: string;
+  session_id: string;
+  participant_id: string;
+  file_path: string;
+  start_time_offset_ms: number;
+  end_time_offset_ms: number | null;
+}> {
+  const form = new FormData();
+  form.set('session_id', payload.session_id);
+  form.set('participant_id', payload.participant_id);
+  if (payload.connection_id) form.set('connection_id', payload.connection_id);
+  if (payload.stream_id) form.set('stream_id', payload.stream_id);
+  if (payload.started_at) form.set('started_at', payload.started_at);
+  if (payload.ended_at) form.set('ended_at', payload.ended_at);
+  if (payload.mime_type) form.set('mime_type', payload.mime_type);
+  if (payload.device_label) form.set('device_label', payload.device_label);
+  form.set(
+    'file',
+    payload.file,
+    payload.filename || `participant-${payload.participant_id}.webm`,
+  );
+
+  return uploadRequest('/api/recordings/upload/local', form);
 }

@@ -7,7 +7,7 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException
 
-from ..services import openvidu_service
+from ..services import livekit_service
 from ..services.speech_analysis_service import speech_analysis_service
 from ..services.session_store import session_store
 
@@ -30,7 +30,11 @@ async def create_session(request_data: Dict[str, Any]):
     session_id = request_data.get("session_id") or f"ses_{uuid.uuid4().hex[:8]}"
 
     try:
-        await openvidu_service.create_session(session_id)
+        await livekit_service.create_room(
+            session_id,
+            metadata={"session_id": session_id},
+            max_participants=request_data.get("max_participants"),
+        )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
@@ -67,69 +71,66 @@ async def create_token(request_data: Dict[str, Any]):
     _persist_session_metadata(session_id)
 
     try:
-        await openvidu_service.create_session(session_id)
+        await livekit_service.create_room(
+            room_name=session_id,
+            metadata={"session_id": session_id},
+        )
     except Exception as exc:
         raise HTTPException(
             status_code=500,
-            detail=f"OpenVidu session could not be prepared: {exc}",
+            detail=f"LiveKit room could not be prepared: {exc}",
         ) from exc
 
     try:
-        token_or_connection = await openvidu_service.create_token(
-            session_id,
-            participant_id,
+        token = livekit_service.create_access_token(
+            room_name=session_id,
+            participant_id=participant_id,
+            display_name=display_name,
+            metadata=server_data,
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-    if isinstance(token_or_connection, str):
-        connection = {"token": token_or_connection}
-    else:
-        connection = token_or_connection
-
-    connection_id = connection.get("id") or connection.get("connectionId")
+    connection_id = participant_id
     session_store.attach_connection(
         session_id=session_id,
         participant_id=participant_id,
-        connection_id=connection_id or f"pending_{participant_id}",
+        connection_id=connection_id,
         server_data=server_data,
         client_data={"display_name": display_name},
     )
     _persist_session_metadata(session_id)
 
     recording_state = session_store.load_session(session_id)["recording"]
-    if session_store.can_start_recording(session_id):
-        try:
-            recording = await openvidu_service.start_individual_recording(
-                session_id=session_id,
-                name=session_id,
-            )
-            session_store.update_recording(
-                session_id,
-                {
-                    "status": recording.get("status", "started"),
-                    "recording_id": recording.get("id"),
-                    "name": recording.get("name", session_id),
-                    "started_at": datetime.datetime.now(datetime.UTC).isoformat(),
-                },
-            )
-            recording_state = session_store.load_session(session_id)["recording"]
-        except Exception as exc:
-            session_store.update_recording(
-                session_id,
-                {
-                    "status": "failed",
-                    "reason": str(exc),
-                },
-            )
-            recording_state = session_store.load_session(session_id)["recording"]
-        _persist_session_metadata(session_id)
+    if not recording_state.get("started_at"):
+        session_store.update_recording(
+            session_id,
+            {
+                "mode": "LOCAL_INDIVIDUAL",
+                "status": "started",
+                "started_at": datetime.datetime.now(datetime.UTC).isoformat(),
+                "reason": None,
+            },
+        )
+    else:
+        session_store.update_recording(
+            session_id,
+            {
+                "mode": "LOCAL_INDIVIDUAL",
+                "status": recording_state.get("status") or "started",
+                "reason": None,
+            },
+        )
+    recording_state = session_store.load_session(session_id)["recording"]
+    _persist_session_metadata(session_id)
 
     return {
-        "token": connection.get("token"),
+        "token": token,
         "participant_id": participant_id,
         "session_id": session_id,
         "connection_id": connection_id,
+        "ws_url": livekit_service.public_ws_url(),
+        "provider": "livekit",
         "server_data": server_data,
         "recording_status": recording_state.get("status"),
         "recording_id": recording_state.get("recording_id"),
@@ -159,34 +160,8 @@ async def get_session(session_id: str):
 
 @router.post("/{session_id}/stop")
 async def stop_session(session_id: str):
-    session = session_store.load_session(session_id)
-    recording = session.get("recording", {})
-    recording_id = recording.get("recording_id")
-
-    if recording_id and recording.get("status") in {"started", "starting"}:
-        try:
-            stopped = await openvidu_service.stop_recording(recording_id)
-            session_store.update_recording(
-                session_id,
-                {
-                    "status": stopped.get("status", "stopped"),
-                    "stopped_at": datetime.datetime.now(datetime.UTC).isoformat(),
-                    "duration_sec": stopped.get("duration"),
-                    "size_bytes": stopped.get("size"),
-                    "reason": stopped.get("reason"),
-                },
-            )
-        except Exception as exc:
-            session_store.update_recording(
-                session_id,
-                {
-                    "status": "failed",
-                    "reason": str(exc),
-                },
-            )
-
     try:
-        await openvidu_service.close_session(session_id)
+        await livekit_service.delete_room(session_id)
     except Exception:
         pass
 
@@ -195,8 +170,33 @@ async def stop_session(session_id: str):
     session["finalized_at"] = datetime.datetime.now(datetime.UTC).isoformat()
     session_store.save_session(session_id, session)
 
+    has_tracks = any(
+        participant.get("recording_files")
+        for participant in session.get("participants", [])
+    )
+    if has_tracks:
+        try:
+            await asyncio.to_thread(
+                speech_analysis_service.analyze_session,
+                session_id,
+            )
+        except Exception:
+            pass
+
     return {
         "status": session["status"],
         "session_id": session_id,
         "recording": session.get("recording", {}),
     }
+
+
+@router.get("")
+async def list_active_sessions():
+    rooms = []
+    try:
+        response = await livekit_service.list_rooms()
+        rooms = response.get("rooms", [])
+    except Exception:
+        pass
+
+    return {"sessions": rooms}

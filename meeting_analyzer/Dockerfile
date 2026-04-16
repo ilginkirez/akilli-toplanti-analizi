@@ -13,7 +13,16 @@ RUN apt-get update --fix-missing && apt-get install -yqq \
 
 # Gereksinimleri kopyala ve kur
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir -r requirements.txt
+
+# Celery worker icin ek bagimliliklar
+COPY requirements_async.txt .
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir --no-build-isolation -r requirements_async.txt
+
+# Opsiyonel ML paketi, goruntu/ses analizi gerekiyorsa ayri bir imajda kullanilir.
+# Bu prod kurulumda worker hafif kalsin diye kurulmuyor.
 
 # Uygulama kodlarını kopyala
 COPY . .

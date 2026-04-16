@@ -365,6 +365,57 @@ class SessionStore:
             session["status"] = "recording"
         return self.save_session(session_id, session)
 
+    def add_participant_recording_file(
+        self,
+        session_id: str,
+        participant_id: str,
+        recording_info: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        session = self.load_session(session_id)
+        participant = self._find_participant(session, participant_id)
+        if participant is None:
+            raise KeyError(f"Participant bulunamadi: {participant_id}")
+
+        existing = participant.setdefault("recording_files", [])
+        existing = [
+            item
+            for item in existing
+            if item.get("file_path") != recording_info.get("file_path")
+        ]
+        existing.append(recording_info)
+        participant["recording_files"] = existing
+
+        if recording_info.get("has_audio") and recording_info.get("file_path"):
+            participant["recording_file"] = recording_info["file_path"]
+        if recording_info.get("stream_id"):
+            participant["stream_recording_id"] = recording_info["stream_id"]
+
+        recording_files = session["recording"].setdefault("files", [])
+        filtered_files = [
+            item
+            for item in recording_files
+            if item.get("file_path") != recording_info.get("file_path")
+        ]
+        filtered_files.append(
+            {
+                "participant_id": participant_id,
+                "connection_id": recording_info.get("connection_id"),
+                "stream_id": recording_info.get("stream_id"),
+                "file_path": recording_info.get("file_path"),
+                "size": recording_info.get("size"),
+                "has_audio": recording_info.get("has_audio"),
+                "has_video": recording_info.get("has_video"),
+                "mime_type": recording_info.get("mime_type"),
+                "device_label": recording_info.get("device_label"),
+                "start_time_offset_ms": recording_info.get("start_time_offset_ms"),
+                "end_time_offset_ms": recording_info.get("end_time_offset_ms"),
+                "recorded_started_at": recording_info.get("recorded_started_at"),
+                "recorded_ended_at": recording_info.get("recorded_ended_at"),
+            }
+        )
+        session["recording"]["files"] = filtered_files
+        return self.save_session(session_id, session)
+
     def update_speech_analysis(
         self,
         session_id: str,
