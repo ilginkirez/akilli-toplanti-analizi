@@ -1,11 +1,12 @@
 import { memo, useEffect, useRef } from 'react';
+import type { AudioTrack as LiveKitAudioTrack, VideoTrack as LiveKitVideoTrack } from 'livekit-client';
 import { Mic, MicOff, Pin, PinOff, VideoOff, User } from 'lucide-react';
 
 interface VideoParticipantProps {
   name: string;
   stream?: MediaStream | null;
-  videoTrack?: MediaStreamTrack | null;
-  audioTrack?: MediaStreamTrack | null;
+  videoTrack?: LiveKitVideoTrack | null;
+  audioTrack?: LiveKitAudioTrack | null;
   imageUrl?: string;
   isMuted?: boolean;
   isVideoOn?: boolean;
@@ -36,85 +37,65 @@ function VideoParticipantComponent({
 }: VideoParticipantProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const videoStreamRef = useRef<MediaStream | null>(null);
-  const audioStreamRef = useRef<MediaStream | null>(null);
-  const boundVideoTrackRef = useRef<MediaStreamTrack | null>(null);
-  const boundAudioTrackRef = useRef<MediaStreamTrack | null>(null);
-
-  const fallbackVideoTrack = videoTrack ?? stream?.getVideoTracks()[0] ?? null;
-  const fallbackAudioTrack = audioTrack ?? stream?.getAudioTracks()[0] ?? null;
+  const showSpeakingState = !isLocal && isSpeaking;
   const hasLiveVideoTrack = Boolean(
-    fallbackVideoTrack && fallbackVideoTrack.readyState === 'live',
+    videoTrack && videoTrack.mediaStreamTrack.readyState === 'live',
   );
   const hasLiveAudioTrack = Boolean(
-    fallbackAudioTrack && fallbackAudioTrack.readyState === 'live',
+    audioTrack && audioTrack.mediaStreamTrack.readyState === 'live',
   );
   const showVideo = hasLiveVideoTrack;
   const showVideoOffIndicator = !showVideo && !isVideoOn;
-  const showSpeakingState = !isLocal && isSpeaking;
 
   useEffect(() => {
-    if (!videoRef.current) {
+    const element = videoRef.current;
+    if (!element) {
       return;
     }
 
-    if (!fallbackVideoTrack || fallbackVideoTrack.readyState !== 'live') {
-      boundVideoTrackRef.current = null;
-      videoStreamRef.current = null;
-      if (videoRef.current.srcObject !== null) {
-        videoRef.current.srcObject = null;
+    if (!videoTrack || videoTrack.mediaStreamTrack.readyState !== 'live') {
+      if (element.srcObject !== null) {
+        element.srcObject = null;
       }
       return;
     }
 
-    if (boundVideoTrackRef.current !== fallbackVideoTrack) {
-      boundVideoTrackRef.current = fallbackVideoTrack;
-      videoStreamRef.current = new MediaStream([fallbackVideoTrack]);
-    }
+    videoTrack.attach(element);
+    element.muted = isLocal;
+    element.playsInline = true;
 
-    if (videoRef.current.srcObject !== videoStreamRef.current) {
-      videoRef.current.srcObject = videoStreamRef.current;
-    }
-  }, [fallbackVideoTrack]);
-
-  useEffect(() => {
-    if (!audioRef.current) {
-      return;
-    }
-
-    if (!fallbackAudioTrack || fallbackAudioTrack.readyState !== 'live') {
-      boundAudioTrackRef.current = null;
-      audioStreamRef.current = null;
-      if (audioRef.current.srcObject !== null) {
-        audioRef.current.srcObject = null;
-      }
-      return;
-    }
-
-    if (boundAudioTrackRef.current !== fallbackAudioTrack) {
-      boundAudioTrackRef.current = fallbackAudioTrack;
-      audioStreamRef.current = new MediaStream([fallbackAudioTrack]);
-    }
-
-    if (audioRef.current.srcObject !== audioStreamRef.current) {
-      audioRef.current.srcObject = audioStreamRef.current;
-    }
-  }, [fallbackAudioTrack]);
-
-  useEffect(() => {
     return () => {
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
+      videoTrack.detach(element);
+      if (element.srcObject !== null) {
+        element.srcObject = null;
       }
-      if (audioRef.current) {
-        audioRef.current.srcObject = null;
-      }
-      videoStreamRef.current = null;
-      audioStreamRef.current = null;
-      boundVideoTrackRef.current = null;
-      boundAudioTrackRef.current = null;
     };
-  }, []);
+  }, [isLocal, videoTrack]);
+
+  useEffect(() => {
+    const element = audioRef.current;
+    if (!element) {
+      return;
+    }
+
+    if (!audioTrack || audioTrack.mediaStreamTrack.readyState !== 'live') {
+      if (element.srcObject !== null) {
+        element.srcObject = null;
+      }
+      return;
+    }
+
+    audioTrack.attach(element);
+    element.autoplay = true;
+    element.playsInline = true;
+
+    return () => {
+      audioTrack.detach(element);
+      if (element.srcObject !== null) {
+        element.srcObject = null;
+      }
+    };
+  }, [audioTrack]);
 
   const initials = name
     .split(' ')
@@ -170,13 +151,13 @@ function VideoParticipantComponent({
       <div
         className={`pointer-events-none absolute inset-0 rounded-xl border-2 transition-opacity duration-200 ${
           showSpeakingState
-            ? 'border-[5px] border-emerald-400 opacity-100 shadow-[0_0_0_3px_rgba(34,197,94,0.55),0_0_38px_rgba(34,197,94,0.28),inset_0_0_0_1px_rgba(255,255,255,0.16)]'
+            ? 'border-[6px] border-emerald-400 opacity-100 shadow-[0_0_0_3px_rgba(34,197,94,0.65),0_0_46px_rgba(34,197,94,0.34),inset_0_0_0_1px_rgba(255,255,255,0.18)]'
             : 'border-transparent opacity-0'
         }`}
       />
 
       {showSpeakingState && (
-        <div className="pointer-events-none absolute top-2 left-2 z-20 rounded-full border border-emerald-300/70 bg-emerald-400 px-2.5 py-1 text-[10px] font-black tracking-[0.18em] text-emerald-950 shadow-[0_10px_24px_rgba(34,197,94,0.32)]">
+        <div className="pointer-events-none absolute top-2 left-2 z-20 rounded-full border border-emerald-300/80 bg-emerald-400 px-3 py-1 text-[10px] font-black tracking-[0.22em] text-emerald-950 shadow-[0_12px_26px_rgba(34,197,94,0.38)]">
           KONUSUYOR
         </div>
       )}
@@ -192,7 +173,7 @@ function VideoParticipantComponent({
             isPinned
               ? 'border-amber-400/70 bg-amber-400/20 text-amber-100'
               : 'border-white/15 bg-black/45 text-white/85 hover:border-white/35 hover:bg-black/65'
-          }`}
+          } ${showSpeakingState ? 'top-10' : ''}`}
           aria-label={pinLabel ?? (isPinned ? `${name} sabitlemesini kaldir` : `${name} sabitle`)}
           title={pinLabel ?? (isPinned ? 'Sabitlemeyi kaldir' : 'Sabitle')}
         >
@@ -205,9 +186,8 @@ function VideoParticipantComponent({
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3">
         <div className="flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-2">
-            {/* Speaking dot indicator */}
             {showSpeakingState && (
-              <div className="h-2 w-2 flex-shrink-0 animate-pulse rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
+              <div className="h-2.5 w-2.5 flex-shrink-0 animate-pulse rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.8)]" />
             )}
             <span className="truncate text-xs font-medium text-white">
               {name}
@@ -222,7 +202,7 @@ function VideoParticipantComponent({
             ) : (
               <div
                 className={`flex h-6 w-6 items-center justify-center rounded-full ${
-                  showSpeakingState ? 'bg-emerald-500/80' : 'bg-white/10'
+                  showSpeakingState ? 'bg-emerald-500/90 shadow-[0_0_18px_rgba(34,197,94,0.35)]' : 'bg-white/10'
                 }`}
               >
                 <Mic size={12} className="text-white" />

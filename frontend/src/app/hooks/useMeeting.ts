@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  type AudioTrack as LiveKitAudioTrack,
   ConnectionState,
   Room,
   RoomEvent,
   Track,
   VideoPresets,
   type Participant as LiveKitParticipant,
+  type VideoTrack as LiveKitVideoTrack,
 } from 'livekit-client';
 
 import * as api from '../services/api';
@@ -21,8 +23,8 @@ export interface Participant {
   audioLevel: number;
   lastSpokeAt: number | null;
   stream: MediaStream | null;
-  audioTrack: MediaStreamTrack | null;
-  videoTrack: MediaStreamTrack | null;
+  audioTrack: LiveKitAudioTrack | null;
+  videoTrack: LiveKitVideoTrack | null;
 }
 
 export interface MeetingState {
@@ -69,23 +71,25 @@ function buildParticipantModel(
     participant.getTrackPublication(Track.Source.Camera) ??
     participant.getTrackPublication(Track.Source.ScreenShare);
 
-  const audioTrack = audioPublication?.audioTrack?.mediaStreamTrack ?? null;
-  const videoTrack = videoPublication?.videoTrack?.mediaStreamTrack ?? null;
+  const audioTrack = audioPublication?.audioTrack ?? null;
+  const videoTrack = videoPublication?.videoTrack ?? null;
+  const audioMediaTrack = audioTrack?.mediaStreamTrack ?? null;
+  const videoMediaTrack = videoTrack?.mediaStreamTrack ?? null;
   const cacheKey = participant.identity;
   const cachedEntry = streamCache.get(cacheKey);
   let stream = cachedEntry?.stream ?? null;
 
   if (
-    cachedEntry?.audioTrack !== audioTrack ||
-    cachedEntry?.videoTrack !== videoTrack
+    cachedEntry?.audioTrack !== audioMediaTrack ||
+    cachedEntry?.videoTrack !== videoMediaTrack
   ) {
-    const tracks = [audioTrack, videoTrack].filter(
+    const tracks = [audioMediaTrack, videoMediaTrack].filter(
       (track): track is MediaStreamTrack => track !== null,
     );
     stream = tracks.length > 0 ? new MediaStream(tracks) : null;
     streamCache.set(cacheKey, {
-      audioTrack,
-      videoTrack,
+      audioTrack: audioMediaTrack,
+      videoTrack: videoMediaTrack,
       stream,
     });
   }
@@ -99,8 +103,8 @@ function buildParticipantModel(
       'Unknown',
     connectionId: participant.sid || null,
     streamId: videoPublication?.trackSid ?? audioPublication?.trackSid ?? null,
-    isMuted: !participant.isMicrophoneEnabled || !audioTrack,
-    isVideoOn: participant.isCameraEnabled && Boolean(videoTrack),
+    isMuted: !participant.isMicrophoneEnabled || !audioMediaTrack,
+    isVideoOn: participant.isCameraEnabled && Boolean(videoMediaTrack),
     isSpeaking: participant.isSpeaking,
     audioLevel: participant.audioLevel,
     lastSpokeAt: participant.lastSpokeAt?.getTime() ?? null,
