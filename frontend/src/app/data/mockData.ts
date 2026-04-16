@@ -262,9 +262,8 @@ export const mockMeetings: Meeting[] = [
 // Mock Tasks
 export const mockTasks: Task[] = [
   {
-    id: 't1',
-    title: 'Yeni kullanÄ±cÄ± arayÃ¼zÃ¼ prototipleri hazÄ±rla',
-    description: 'Figma\'da yeni dashboard tasarÄ±mlarÄ±nÄ± tamamla ve ekiple paylaÅŸ',
+    title: 'Yeni kullanıcı arayüzü prototipleri hazırla',
+    description: 'Yeni dashboard tasarımlarını tamamla ve ekiple paylaş',
     assignee: mockUsers[1],
     assigner: mockUsers[0],
     dueDate: new Date('2026-04-19T17:00:00'),
@@ -519,3 +518,5 @@ export const mockTeamAnalytics: TeamAnalytics = {
 
 // Current user (for the app)
 export const currentUser = mockUsers[0];
+
+

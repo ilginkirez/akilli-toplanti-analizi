@@ -59,7 +59,7 @@ export function Login() {
               Toplantilari yonet, odaya gec ve LiveKit deneyimini tek yerden baslat.
             </h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
-              `fullfrontend` artik yeni ana giris noktasi. Oturum acip dashboard'a gecebilir,
+              `frontend` artik projenin ana web uygulamasi. Oturum acip dashboard'a gecebilir,
               yeni toplanti olusturabilir ve dogrudan tam ekran gorusme odasina katilabilirsiniz.
             </p>
             <div className="mt-10 grid gap-4 sm:grid-cols-2">
