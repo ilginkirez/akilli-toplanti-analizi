@@ -1,6 +1,32 @@
-import { OpenVidu } from 'openvidu-browser';
+import { OpenVidu } from 'openvidu-browser-v2compatibility';
 import { useRef, useState } from 'react';
 import api from '../services/api';
+
+function resolveIceHost() {
+  const configuredHost = import.meta.env.VITE_OPENVIDU_ICE_HOST?.trim();
+  if (configuredHost) {
+    return configuredHost;
+  }
+
+  if (typeof window === 'undefined') {
+    return 'localhost';
+  }
+
+  return window.location.hostname || 'localhost';
+}
+
+function createIceServers() {
+  const host = resolveIceHost();
+  const port = import.meta.env.VITE_OPENVIDU_ICE_PORT?.trim() || '3478';
+  const username = import.meta.env.VITE_OPENVIDU_TURN_USERNAME?.trim() || 'openvidu';
+  const credential = import.meta.env.VITE_OPENVIDU_TURN_CREDENTIAL?.trim() || 'openvidu';
+
+  return [
+    { urls: [`turn:${host}:${port}?transport=udp`], username, credential },
+    { urls: [`turn:${host}:${port}?transport=tcp`], username, credential },
+    { urls: [`stun:${host}:${port}`] }
+  ];
+}
 
 export function useOpenVidu() {
   const OV = useRef(null);
@@ -9,6 +35,9 @@ export function useOpenVidu() {
 
   async function joinMeeting(displayName, sessionId) {
     OV.current = new OpenVidu();
+    OV.current.setAdvancedConfiguration({
+      iceServers: createIceServers()
+    });
     session.current = OV.current.initSession();
 
     // Uzak stream geldiğinde — her stream ayrı participant

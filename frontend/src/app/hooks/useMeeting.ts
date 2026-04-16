@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { OpenVidu, Publisher, Session } from 'openvidu-browser';
+import { OpenVidu, Publisher, Session } from 'openvidu-browser-v2compatibility';
 
 import * as api from '../services/api';
 

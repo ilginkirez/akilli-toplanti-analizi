@@ -16,6 +16,8 @@ __pycache__/
 # Local env files
 .env
 .env.*
+compose.oracle.env
+compose.prod.env
 
 # Notebook / editor noise
 .ipynb_checkpoints/

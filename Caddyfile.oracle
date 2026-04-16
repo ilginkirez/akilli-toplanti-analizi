@@ -1,0 +1,41 @@
+http://{$DOMAIN_OR_PUBLIC_IP} {
+	redir https://{host}{uri} permanent
+}
+
+https://{$DOMAIN_OR_PUBLIC_IP} {
+	encode zstd gzip
+
+	@api path /api/*
+	handle @api {
+		reverse_proxy backend:8000
+	}
+
+	@openvidu_ws {
+		header Connection *Upgrade*
+		header Upgrade websocket
+		query sessionId=*
+	}
+	handle @openvidu_ws {
+		reverse_proxy openvidu:443 {
+			header_up Host {http.request.host}
+			transport http {
+				versions h1
+			}
+		}
+	}
+
+	handle /openvidu* {
+		reverse_proxy openvidu:443 {
+			header_up Host {http.request.host}
+			transport http {
+				versions h1
+			}
+		}
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

@@ -3,7 +3,7 @@ openvidu_connector.py
 ---------------------
 OpenVidu Server REST API ile iletişim modülü.
 
-OpenVidu 2.x Community Edition REST API'sini kullanarak:
+OpenVidu 2.x uyumlu REST API'sini kullanarak:
 - Oturum oluşturma/kapatma
 - Katılımcı bağlantı token'ı üretme
 - Oturum bilgisi sorgulama
@@ -41,7 +41,7 @@ class OpenViduConnector:
     """
     OpenVidu Server REST API istemcisi.
 
-    OpenVidu 2.x CE (Community Edition) REST API'sini kullanarak
+    OpenVidu 2.x uyumlu REST API'sini kullanarak
     oturum yönetimi ve katılımcı bağlantısı sağlar.
 
     Attributes:

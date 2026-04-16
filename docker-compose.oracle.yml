@@ -1,0 +1,117 @@
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - meeting-net
+
+  openvidu:
+    image: openvidu/openvidu-dev:2.30.0
+    restart: unless-stopped
+    environment:
+      - DOMAIN_OR_PUBLIC_IP=${DOMAIN_OR_PUBLIC_IP}
+      - HTTPS_PORT=${HTTPS_PORT:-443}
+      - FORCE_PLAIN_HTTP=${FORCE_PLAIN_HTTP:-false}
+      - OPENVIDU_SECRET=${OPENVIDU_SECRET}
+      - COTURN_IP=${COTURN_IP}
+      - KMS_DOCKER_ENV_KMS_MIN_PORT=${KMS_MIN_PORT:-42000}
+      - KMS_DOCKER_ENV_KMS_MAX_PORT=${KMS_MAX_PORT:-42100}
+      - OPENVIDU_RECORDING=true
+      - OPENVIDU_RECORDING_PATH=/opt/openvidu/recordings
+      - OPENVIDU_RECORDING_AUTOSTOP_TIMEOUT=5
+      - OPENVIDU_CDR=true
+      - OPENVIDU_CDR_PATH=/opt/openvidu/cdr
+      - OPENVIDU_WEBHOOK=true
+      - OPENVIDU_WEBHOOK_ENDPOINT=${OPENVIDU_WEBHOOK_ENDPOINT:-http://backend:8000/api/openvidu/webhook}
+      - OPENVIDU_WEBHOOK_EVENTS=["sessionCreated","sessionDestroyed","participantJoined","participantLeft","webrtcConnectionCreated","webrtcConnectionDestroyed","recordingStatusChanged"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./meeting_analyzer/recordings:/opt/openvidu/recordings
+      - ./meeting_analyzer/cdr:/opt/openvidu/cdr
+    ports:
+      - "3478:3478/tcp"
+      - "3478:3478/udp"
+      - "${KMS_MIN_PORT:-42000}-${KMS_MAX_PORT:-42100}:${KMS_MIN_PORT:-42000}-${KMS_MAX_PORT:-42100}/tcp"
+      - "${KMS_MIN_PORT:-42000}-${KMS_MAX_PORT:-42100}:${KMS_MIN_PORT:-42000}-${KMS_MAX_PORT:-42100}/udp"
+    networks:
+      - meeting-net
+
+  backend:
+    build:
+      context: ./meeting_analyzer
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - OPENVIDU_URL=${OPENVIDU_URL:-http://openvidu:443}
+      - OPENVIDU_SECRET=${OPENVIDU_SECRET}
+      - SSL_VERIFY=${SSL_VERIFY:-false}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./meeting_analyzer/src/storage:/app/src/storage
+      - ./meeting_analyzer/recordings:/app/recordings
+      - /tmp/audio:/tmp/audio
+    depends_on:
+      - redis
+      - openvidu
+    networks:
+      - meeting-net
+
+  celery_worker:
+    build:
+      context: ./meeting_analyzer
+      dockerfile: Dockerfile
+    command: celery -A src.celery_app worker --loglevel=info --concurrency=4
+    restart: unless-stopped
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./meeting_analyzer:/app
+      - /tmp/audio:/tmp/audio
+    depends_on:
+      - redis
+    networks:
+      - meeting-net
+
+  celery_beat:
+    build:
+      context: ./meeting_analyzer
+      dockerfile: Dockerfile
+    command: celery -A src.celery_app beat --loglevel=info
+    restart: unless-stopped
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    networks:
+      - meeting-net
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.oracle
+      args:
+        VITE_API_URL: ""
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - openvidu
+    environment:
+      - DOMAIN_OR_PUBLIC_IP=${DOMAIN_OR_PUBLIC_IP}
+    ports:
+      - "${GATEWAY_HTTP_PORT:-8080}:80"
+      - "${GATEWAY_HTTPS_PORT:-8443}:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - meeting-net
+
+networks:
+  meeting-net:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
