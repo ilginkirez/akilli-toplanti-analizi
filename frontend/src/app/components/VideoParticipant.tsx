@@ -149,7 +149,7 @@ function VideoParticipantComponent({
 
       {/* Speaking indicator overlay */}
       <div
-        className={`pointer-events-none absolute inset-0 rounded-xl border-2 transition-opacity duration-200 ${
+        className={`pointer-events-none absolute inset-0 rounded-xl border-2 ${
           showSpeakingState
             ? 'border-[6px] border-emerald-400 opacity-100 shadow-[0_0_0_3px_rgba(34,197,94,0.65),0_0_46px_rgba(34,197,94,0.34),inset_0_0_0_1px_rgba(255,255,255,0.18)]'
             : 'border-transparent opacity-0'
@@ -169,7 +169,7 @@ function VideoParticipantComponent({
             event.stopPropagation();
             onPinToggle();
           }}
-          className={`absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium transition ${
+          className={`absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium ${
             isPinned
               ? 'border-amber-400/70 bg-amber-400/20 text-amber-100'
               : 'border-white/15 bg-black/45 text-white/85 hover:border-white/35 hover:bg-black/65'
@@ -187,7 +187,7 @@ function VideoParticipantComponent({
         <div className="flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-2">
             {showSpeakingState && (
-              <div className="h-2.5 w-2.5 flex-shrink-0 animate-pulse rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.8)]" />
+              <div className="h-2.5 w-2.5 flex-shrink-0 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.8)]" />
             )}
             <span className="truncate text-xs font-medium text-white">
               {name}

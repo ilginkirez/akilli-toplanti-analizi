@@ -251,53 +251,55 @@ export default function App() {
         )}
 
         {/* Main Speaker Video */}
-        <div className="flex-1 flex items-center justify-center min-h-0">
-          <div
-            className="w-full h-full max-w-6xl rounded-2xl overflow-hidden shadow-2xl relative bg-black"
-            style={{ contain: 'paint' }}
-          >
-            {focusedParticipant && (
-              <VideoParticipant
-                key={focusedParticipant.id}
-                name={focusedParticipant.name}
-                stream={focusedParticipant.stream}
-                audioTrack={focusedParticipant.audioTrack}
-                videoTrack={focusedParticipant.videoTrack}
-                isMuted={focusedParticipant.isMuted}
-                isVideoOn={focusedParticipant.isVideoOn}
-                isSpeaking={
-                  focusedParticipant.id === localParticipant?.id
-                    ? false
-                    : focusedParticipant.isSpeaking
-                }
-                isLocal={focusedParticipant.id === localParticipant?.id}
-                isLarge={true}
-                isPinned={focusedParticipant.id === pinnedParticipantId}
-                showPinAction={true}
-                onPinToggle={() => togglePinnedParticipant(focusedParticipant.id)}
-              />
-            )}
-            {shouldShowLocalPreview && localParticipant && (
-              <div
-                className="absolute bottom-4 right-4 z-10 w-32 sm:w-40 md:w-48 aspect-[4/3] rounded-xl overflow-hidden border border-white/15 shadow-xl bg-black"
-                style={{ contain: 'paint' }}
-              >
+        <div className="relative flex-1 min-h-0">
+          <div className="flex h-full items-center justify-center">
+            <div
+              className="w-full h-full max-w-6xl rounded-2xl overflow-hidden shadow-2xl relative bg-black"
+              style={{ contain: 'paint' }}
+            >
+              {focusedParticipant && (
                 <VideoParticipant
-                  name={localParticipant.name}
-                  stream={localParticipant.stream}
-                  audioTrack={localParticipant.audioTrack}
-                  videoTrack={localParticipant.videoTrack}
-                  isMuted={localParticipant.isMuted}
-                  isVideoOn={localParticipant.isVideoOn}
-                  isSpeaking={false}
-                  isLocal={true}
-                  isPinned={localParticipant.id === pinnedParticipantId}
+                  key={focusedParticipant.id}
+                  name={focusedParticipant.name}
+                  stream={focusedParticipant.stream}
+                  audioTrack={focusedParticipant.audioTrack}
+                  videoTrack={focusedParticipant.videoTrack}
+                  isMuted={focusedParticipant.isMuted}
+                  isVideoOn={focusedParticipant.isVideoOn}
+                  isSpeaking={
+                    focusedParticipant.id === localParticipant?.id
+                      ? false
+                      : focusedParticipant.isSpeaking
+                  }
+                  isLocal={focusedParticipant.id === localParticipant?.id}
+                  isLarge={true}
+                  isPinned={focusedParticipant.id === pinnedParticipantId}
                   showPinAction={true}
-                  onPinToggle={() => togglePinnedParticipant(localParticipant.id)}
+                  onPinToggle={() => togglePinnedParticipant(focusedParticipant.id)}
                 />
-              </div>
-            )}
+              )}
+            </div>
           </div>
+          {shouldShowLocalPreview && localParticipant && (
+            <div
+              className="absolute bottom-4 right-4 z-20 w-32 sm:w-40 md:w-48 aspect-[4/3] rounded-xl overflow-hidden border border-white/15 bg-black"
+              style={{ contain: 'paint', transform: 'translateZ(0)' }}
+            >
+              <VideoParticipant
+                name={localParticipant.name}
+                stream={localParticipant.stream}
+                audioTrack={localParticipant.audioTrack}
+                videoTrack={localParticipant.videoTrack}
+                isMuted={localParticipant.isMuted}
+                isVideoOn={localParticipant.isVideoOn}
+                isSpeaking={false}
+                isLocal={true}
+                isPinned={localParticipant.id === pinnedParticipantId}
+                showPinAction={true}
+                onPinToggle={() => togglePinnedParticipant(localParticipant.id)}
+              />
+            </div>
+          )}
         </div>
       </div>
     );
