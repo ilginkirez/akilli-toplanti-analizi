@@ -106,6 +106,20 @@ function getDeviceInfo() {
   };
 }
 
+function pickRecordingMimeType(): string {
+  if (typeof MediaRecorder === 'undefined') {
+    return '';
+  }
+
+  const candidates = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+  ];
+
+  return candidates.find((item) => MediaRecorder.isTypeSupported(item)) ?? '';
+}
+
 export function useMeeting() {
   const [state, setState] = useState<MeetingState>({
     sessionId: null,
@@ -127,6 +141,10 @@ export function useMeeting() {
   const participantIdRef = useRef<string | null>(null);
   const connectionIdRef = useRef<string | null>(null);
   const isLeavingRef = useRef(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingTrackRef = useRef<MediaStreamTrack | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const recordingStartedAtRef = useRef<string | null>(null);
 
   const syncRoomState = useCallback((room: Room) => {
     const localParticipant = buildParticipantModel(room.localParticipant);
@@ -163,6 +181,108 @@ export function useMeeting() {
     connectionIdRef.current = null;
   }, []);
 
+  const startLocalAudioRecording = useCallback(async (room: Room) => {
+    if (typeof MediaRecorder === 'undefined' || mediaRecorderRef.current) {
+      return;
+    }
+
+    const microphonePublication = room.localParticipant.getTrackPublication(Track.Source.Microphone);
+    const mediaStreamTrack = microphonePublication?.audioTrack?.mediaStreamTrack;
+    if (!mediaStreamTrack) {
+      return;
+    }
+
+    const clonedTrack = mediaStreamTrack.clone();
+    const mimeType = pickRecordingMimeType();
+    const recorder = mimeType
+      ? new MediaRecorder(new MediaStream([clonedTrack]), { mimeType })
+      : new MediaRecorder(new MediaStream([clonedTrack]));
+
+    recordedChunksRef.current = [];
+    recordingTrackRef.current = clonedTrack;
+    recordingStartedAtRef.current = new Date().toISOString();
+
+    recorder.addEventListener('dataavailable', (event) => {
+      if (event.data.size > 0) {
+        recordedChunksRef.current.push(event.data);
+      }
+    });
+
+    recorder.start(1000);
+    mediaRecorderRef.current = recorder;
+    setState((current) => ({ ...current, isRecording: true }));
+  }, []);
+
+  const stopAndUploadLocalAudioRecording = useCallback(async () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder) {
+      return;
+    }
+
+    const participantId = participantIdRef.current;
+    const sessionId = sessionIdRef.current;
+    const connectionId = connectionIdRef.current;
+    const room = roomRef.current;
+    const startedAt = recordingStartedAtRef.current;
+
+    mediaRecorderRef.current = null;
+    recordingStartedAtRef.current = null;
+
+    const recordingTrack = recordingTrackRef.current;
+    recordingTrackRef.current = null;
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      recorder.addEventListener(
+        'stop',
+        () => {
+          const type = recorder.mimeType || 'audio/webm';
+          const output =
+            recordedChunksRef.current.length > 0
+              ? new Blob(recordedChunksRef.current, { type })
+              : null;
+          recordedChunksRef.current = [];
+          resolve(output);
+        },
+        { once: true },
+      );
+
+      if (recorder.state !== 'inactive') {
+        recorder.stop();
+      } else {
+        resolve(null);
+      }
+    });
+
+    if (recordingTrack) {
+      recordingTrack.stop();
+    }
+
+    if (!blob || !participantId || !sessionId) {
+      setState((current) => ({ ...current, isRecording: false }));
+      return;
+    }
+
+    try {
+      const microphonePublication =
+        room?.localParticipant.getTrackPublication(Track.Source.Microphone) ?? null;
+      await api.uploadParticipantRecording({
+        session_id: sessionId,
+        participant_id: participantId,
+        connection_id: connectionId,
+        stream_id: microphonePublication?.trackSid ?? connectionId ?? participantId,
+        started_at: startedAt,
+        ended_at: new Date().toISOString(),
+        mime_type: blob.type || recorder.mimeType || 'audio/webm',
+        device_label: navigator.userAgent,
+        file: blob,
+      });
+    } catch (error) {
+      console.warn('uploadParticipantRecording failed', error);
+    } finally {
+      setState((current) => ({ ...current, isRecording: false }));
+    }
+  }, []);
+
   const leaveMeeting = useCallback(async () => {
     setState((current) => ({ ...current, status: 'ending' }));
 
@@ -181,6 +301,12 @@ export function useMeeting() {
       } catch (error) {
         console.warn('leaveParticipant failed', error);
       }
+    }
+
+    try {
+      await stopAndUploadLocalAudioRecording();
+    } catch (error) {
+      console.warn('stopAndUploadLocalAudioRecording failed', error);
     }
 
     isLeavingRef.current = true;
@@ -205,7 +331,7 @@ export function useMeeting() {
       connectionState: ConnectionState.Disconnected,
       connectionMessage: null,
     }));
-  }, [cleanupRoom]);
+  }, [cleanupRoom, stopAndUploadLocalAudioRecording]);
 
   const joinMeeting = useCallback(async (sessionIdStr: string, participantName: string) => {
     setState((current) => ({
@@ -347,11 +473,13 @@ export function useMeeting() {
         server_data: response.server_data,
       });
 
+      await startLocalAudioRecording(room);
+
       setState((current) => ({
         ...current,
         sessionId: response.session_id,
         status: 'active',
-        isRecording: response.recording_status === 'started' || response.recording_status === 'starting',
+        isRecording: true,
         error: null,
         connectionState: ConnectionState.Connected,
         connectionMessage: null,
@@ -370,7 +498,7 @@ export function useMeeting() {
         connectionMessage: null,
       }));
     }
-  }, [cleanupRoom, syncRoomState]);
+  }, [cleanupRoom, startLocalAudioRecording, syncRoomState]);
 
   const toggleMute = useCallback(() => {
     setState((current) => {
@@ -410,6 +538,12 @@ export function useMeeting() {
 
   useEffect(() => {
     return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+      if (recordingTrackRef.current) {
+        recordingTrackRef.current.stop();
+      }
       if (roomRef.current) {
         roomRef.current.disconnect();
       }

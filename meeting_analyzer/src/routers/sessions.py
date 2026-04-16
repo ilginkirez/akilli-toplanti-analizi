@@ -101,14 +101,26 @@ async def create_token(request_data: Dict[str, Any]):
     )
     _persist_session_metadata(session_id)
 
-    session_store.update_recording(
-        session_id,
-        {
-            "mode": "Egress",
-            "status": "disabled",
-            "reason": "LiveKit egress bu asamada etkinlestirilmedi.",
-        },
-    )
+    recording_state = session_store.load_session(session_id)["recording"]
+    if not recording_state.get("started_at"):
+        session_store.update_recording(
+            session_id,
+            {
+                "mode": "LOCAL_INDIVIDUAL",
+                "status": "started",
+                "started_at": datetime.datetime.now(datetime.UTC).isoformat(),
+                "reason": None,
+            },
+        )
+    else:
+        session_store.update_recording(
+            session_id,
+            {
+                "mode": "LOCAL_INDIVIDUAL",
+                "status": recording_state.get("status") or "started",
+                "reason": None,
+            },
+        )
     recording_state = session_store.load_session(session_id)["recording"]
     _persist_session_metadata(session_id)
 
@@ -157,6 +169,19 @@ async def stop_session(session_id: str):
     session["status"] = "ended"
     session["finalized_at"] = datetime.datetime.now(datetime.UTC).isoformat()
     session_store.save_session(session_id, session)
+
+    has_tracks = any(
+        participant.get("recording_files")
+        for participant in session.get("participants", [])
+    )
+    if has_tracks:
+        try:
+            await asyncio.to_thread(
+                speech_analysis_service.analyze_session,
+                session_id,
+            )
+        except Exception:
+            pass
 
     return {
         "status": session["status"],
