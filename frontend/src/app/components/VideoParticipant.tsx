@@ -37,7 +37,7 @@ function VideoParticipantComponent({
 }: VideoParticipantProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const showSpeakingState = !isLocal && isSpeaking;
+  const showSpeakingState = isSpeaking;
   const hasLiveVideoTrack = Boolean(
     videoTrack && videoTrack.mediaStreamTrack.readyState === 'live',
   );

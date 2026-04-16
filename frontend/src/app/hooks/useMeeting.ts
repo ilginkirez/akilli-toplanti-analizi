@@ -239,11 +239,32 @@ export function useMeeting() {
 
   const syncSpeakingState = useCallback((room: Room) => {
     setState((current) => {
-      if (current.remoteParticipants.length === 0) {
-        return current;
+      let changed = false;
+
+      let nextLocalParticipant = current.localParticipant;
+      if (nextLocalParticipant) {
+        const liveLocal = room.localParticipant;
+        if (liveLocal) {
+          const nextIsSpeaking = liveLocal.isSpeaking;
+          const nextAudioLevel = liveLocal.audioLevel;
+          const nextLastSpokeAt = liveLocal.lastSpokeAt?.getTime() ?? nextLocalParticipant.lastSpokeAt;
+          
+          if (
+            nextLocalParticipant.isSpeaking !== nextIsSpeaking ||
+            nextLocalParticipant.audioLevel !== nextAudioLevel ||
+            nextLocalParticipant.lastSpokeAt !== nextLastSpokeAt
+          ) {
+            changed = true;
+            nextLocalParticipant = {
+              ...nextLocalParticipant,
+              isSpeaking: nextIsSpeaking,
+              audioLevel: nextAudioLevel,
+              lastSpokeAt: nextLastSpokeAt,
+            };
+          }
+        }
       }
 
-      let changed = false;
       const nextRemoteParticipants = current.remoteParticipants.map((participant) => {
         const liveParticipant = room.remoteParticipants.get(participant.id);
         if (!liveParticipant) {
@@ -277,6 +298,7 @@ export function useMeeting() {
 
       return {
         ...current,
+        localParticipant: nextLocalParticipant,
         remoteParticipants: nextRemoteParticipants,
       };
     });

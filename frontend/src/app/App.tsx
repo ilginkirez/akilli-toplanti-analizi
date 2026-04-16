@@ -212,7 +212,7 @@ export default function App() {
                   videoTrack={p.videoTrack}
                   isMuted={p.isMuted}
                   isVideoOn={p.isVideoOn}
-                  isSpeaking={p.id === localParticipant?.id ? false : p.isSpeaking}
+                  isSpeaking={p.isSpeaking}
                   isLocal={p.id === localParticipant?.id}
                   isPinned={p.id === pinnedParticipantId}
                   showPinAction={true}
@@ -240,7 +240,7 @@ export default function App() {
                   videoTrack={p.videoTrack}
                   isMuted={p.isMuted}
                   isVideoOn={p.isVideoOn}
-                  isSpeaking={p.id === localParticipant?.id ? false : p.isSpeaking}
+                  isSpeaking={p.isSpeaking}
                   isPinned={p.id === pinnedParticipantId}
                   showPinAction={true}
                   onPinToggle={() => togglePinnedParticipant(p.id)}
@@ -266,11 +266,7 @@ export default function App() {
                   videoTrack={focusedParticipant.videoTrack}
                   isMuted={focusedParticipant.isMuted}
                   isVideoOn={focusedParticipant.isVideoOn}
-                  isSpeaking={
-                    focusedParticipant.id === localParticipant?.id
-                      ? false
-                      : focusedParticipant.isSpeaking
-                  }
+                  isSpeaking={focusedParticipant.isSpeaking}
                   isLocal={focusedParticipant.id === localParticipant?.id}
                   isLarge={true}
                   isPinned={focusedParticipant.id === pinnedParticipantId}
@@ -292,7 +288,7 @@ export default function App() {
                 videoTrack={localParticipant.videoTrack}
                 isMuted={localParticipant.isMuted}
                 isVideoOn={localParticipant.isVideoOn}
-                isSpeaking={false}
+                isSpeaking={localParticipant.isSpeaking}
                 isLocal={true}
                 isPinned={localParticipant.id === pinnedParticipantId}
                 showPinAction={true}
