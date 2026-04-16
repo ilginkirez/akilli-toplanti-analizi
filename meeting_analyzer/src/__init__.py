@@ -1,27 +1,21 @@
 """
 src
 ---
-Meeting Analyzer — Multi-user online meeting data acquisition
+Meeting Analyzer - multi-user online meeting data acquisition
 and speaker-aware analytics platform.
 
 Bu paket:
-- OpenVidu Server ile REST API iletişimi (OpenViduConnector)
-- Katılımcı bazlı ses kaydı (AudioRecorder)
-- Olay kayıt sistemi (EventRegistry)
-- Dataset oluşturucu (DatasetBuilder)
-- Gerçek zamanlı VAD yayını (RealtimeBus)
+- Olay kayit sistemi (EventRegistry)
+- Dataset olusturucu (DatasetBuilder)
+- Gercek zamanli VAD yayini (RealtimeBus)
 - FastAPI backend sunucusu (server)
 """
 
-from .openvidu_connector import OpenViduConnector
-from .audio_recorder import AudioRecorder
-from .event_registry import EventRegistry
 from .dataset_builder import DatasetBuilder
+from .event_registry import EventRegistry
 from .realtime_bus import RealtimeBus, VADSessionManager
 
 __all__ = [
-    "OpenViduConnector",
-    "AudioRecorder",
     "EventRegistry",
     "DatasetBuilder",
     "RealtimeBus",

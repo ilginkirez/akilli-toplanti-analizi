@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Mic, MicOff, Pin, PinOff, VideoOff, User } from 'lucide-react';
 
 interface VideoParticipantProps {
@@ -34,37 +34,47 @@ export function VideoParticipant({
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
-    if (videoRef.current && stream && isVideoOn) {
-      videoRef.current.srcObject = stream;
+    if (!videoRef.current) {
+      return;
     }
+
+    const nextStream = stream && isVideoOn ? stream : null;
+    if (videoRef.current.srcObject !== nextStream) {
+      videoRef.current.srcObject = nextStream;
+    }
+  }, [stream, isVideoOn]);
+
+  useEffect(() => {
+    if (!audioRef.current) {
+      return;
+    }
+
+    const hasAudioTrack = Boolean(stream && stream.getAudioTracks().length > 0);
+    const nextStream = hasAudioTrack ? stream : null;
+    if (audioRef.current.srcObject !== nextStream) {
+      audioRef.current.srcObject = nextStream;
+    }
+  }, [stream]);
+
+  useEffect(() => {
     return () => {
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
-    };
-  }, [stream, isVideoOn]);
-
-  useEffect(() => {
-    if (audioRef.current && stream) {
-      const hasAudioTrack = stream.getAudioTracks().length > 0;
-      audioRef.current.srcObject = hasAudioTrack ? stream : null;
-    }
-
-    return () => {
       if (audioRef.current) {
         audioRef.current.srcObject = null;
       }
     };
-  }, [stream]);
+  }, []);
 
   const initials = name
     .split(' ')
-    .map(n => n[0])
+    .map((n) => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2);
 
-  // Rastgele renk tonu (isimden türetilmiş)
+  // Rastgele renk tonu (isimden turetilmis)
   const hue = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
 
   return (
@@ -148,7 +158,8 @@ export function VideoParticipant({
               <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50 animate-pulse flex-shrink-0" />
             )}
             <span className="text-white text-xs font-medium truncate">
-              {name}{isLocal ? ' (Sen)' : ''}
+              {name}
+              {isLocal ? ' (Sen)' : ''}
             </span>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -157,9 +168,11 @@ export function VideoParticipant({
                 <MicOff size={12} className="text-white" />
               </div>
             ) : (
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                isSpeaking ? 'bg-emerald-500/80' : 'bg-white/10'
-              }`}>
+              <div
+                className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                  isSpeaking ? 'bg-emerald-500/80' : 'bg-white/10'
+                }`}
+              >
                 <Mic size={12} className="text-white" />
               </div>
             )}

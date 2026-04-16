@@ -1,69 +1,138 @@
-# Akıllı Toplantı Analiz Sistemi
+# Akilli Toplanti Analiz Sistemi
 
-Bu proje, çok katılımcılı çevrimiçi toplantıları gerçek zamanlı olarak izleyen, konuşmacıları kanal bazlı ayrıştıran ve toplantı sonunda RTTM ile JSON raporları üreten uçtan uca bir platformdur.
+Bu proje, cok katilimcili cevrimici toplantilari gercek zamanli olarak yoneten, katilimci bazli ses kaydi alabilen ve toplanti sonunda konusmaci zaman cizelgesi uretebilen uctan uca bir platformdur.
 
-## Proje Yapısı
+Guncel mimari `LiveKit + Coturn + FastAPI + React` uzerine kuruludur.
 
-- `frontend/`: React + Vite tabanlı toplantı arayüzü.
-- `meeting_analyzer/`: FastAPI backend, Celery işleri, VAD akışı ve testler.
-- `meeting_analyzer/src/storage/`: oturum metaverisi, `session.json` ve `events.jsonl` çıktıları.
-- `meeting_analyzer/recordings/`: ses / video kayıtları ve analiz çıktıları.
-- `meeting_analyzer/cdr/`: OpenVidu CDR logları.
-- `docker-compose.yml`: Redis, OpenVidu, backend, worker ve frontend servisleri.
-- `start-remote-test.ps1` ve `stop-remote-test.ps1`: yerel uzaktan test akışı.
+## Proje Yapisi
 
-## Temiz Yapı Notları
+- `frontend/`: React + Vite tabanli toplanti arayuzu
+- `meeting_analyzer/`: FastAPI backend, kayit akisi, analiz servisi ve testler
+- `meeting_analyzer/src/storage/`: oturum metadata dosyalari
+- `meeting_analyzer/recordings/`: participant bazli ses kayitlari ve analiz ciktilari
+- `docker-compose.oracle.yml`: Oracle Ubuntu uzerindeki canli servis orkestrasyonu
+- `compose.oracle.env.example`: Oracle dagitimi icin ornek env dosyasi
+- `LIVEKIT_ORACLE.md`: LiveKit/Oracle kurulum notlari
 
-- Root seviyedeki eski `src/` ve `recordings/` klasörleri artık kullanılmıyor.
-- Backend giriş noktası çalışma dizinini otomatik olarak `meeting_analyzer/` içine alır, böylece göreli yollar tek yerde toplanır.
-- Yerel ortam dosyası için `compose.env` yerine `compose.env.example` kullanın.
-- Frontend tarafında örnek üretim değişkeni için `frontend/env.production.example` dosyası vardır.
+## Guncel Mimari
 
-## Hızlı Başlangıç
+Bu sistem saf peer-to-peer degildir. `LiveKit SFU` tabanli sunucu destekli WebRTC kullanir.
 
-1. Frontend bağımlılıklarını kurun:
+Ana bilesenler:
 
-   ```powershell
-   cd frontend
-   npm install
-   ```
+- `frontend`: `livekit-client` ile odaya baglanir
+- `backend`: LiveKit token uretir, participant ve kayit metadata'sini tutar
+- `livekit`: medya yonlendirme katmani
+- `coturn`: TURN/STUN destegi
+- `gateway`: Caddy ile HTTPS ve reverse proxy
 
-2. Backend bağımlılıklarını kurun:
+## Hizli Baslangic
 
-   ```powershell
-   cd meeting_analyzer
-   pip install -r requirements.txt
-   pip install -r requirements_async.txt
-   ```
+1. Frontend bagimliliklarini kurun:
 
-3. Tüm sistemi başlatın:
+```powershell
+cd frontend
+npm install
+```
 
-   ```powershell
-   .\start-remote-test.ps1
-   ```
+2. Backend bagimliliklarini kurun:
 
-## Manuel Çalıştırma
+```powershell
+cd meeting_analyzer
+pip install -r requirements.txt
+pip install -r requirements_async.txt
+```
 
-Sadece backend'i ayağa kaldırmak isterseniz:
+3. Yerel gelistirme icin backend'i calistirin:
 
 ```powershell
 cd meeting_analyzer
 python main.py --host 0.0.0.0 --port 8000
 ```
 
-## Uzaktan Test
+## Oracle Ubuntu VM'e Degisiklik Yansitma
 
-Uzak cihazlardan erişim için `start-remote-test.ps1` betiği frontend'i açar, ngrok tünelini kurar ve backend ile OpenVidu'yu Docker Compose ile başlatır.
+Yerelde frontend veya backend tarafinda yaptigin degisiklikler Ubuntu sunucuya otomatik gitmez. Dogru akis su sekildedir:
 
-İpuçları:
+### 1. Yerelde commit ve push yap
 
-- Mikrofon izni için erişimi `https://` üzerinden açın.
-- Gerekirse ngrok sürecini `taskkill /f /im ngrok.exe` ile kapatın.
-- Sorun giderirken loglar geçici olarak Windows `%TEMP%` klasörü altına yazılır.
+```powershell
+cd "C:\Users\HP\Desktop\akilli-toplanti-analizi"
+git status
+git add .
+git commit -m "feat(frontend): arayuz guncellemeleri"
+git push akilli-toplanti-analizi master
+```
 
-## Geliştirme Notları
+### 2. Windows PowerShell'den Oracle Ubuntu VM'e baglan
 
-- OpenVidu sürümü `2.30.0` ile sabitlenmiştir.
-- Backend çıktılarını temiz tutmak için cache, log ve paket klasörleri `.gitignore` ile dışlanmıştır.
-- Yeni bir ortam kurarken `compose.env.example` ve `frontend/env.production.example` dosyalarını başlangıç şablonu olarak kullanın.
+```powershell
+ssh -i "C:\Users\HP\Downloads\ssh-key-2026-04-15.key" ubuntu@79.76.123.190
+```
 
+Su prompt'u goruyorsan dogru yerdesin:
+
+```bash
+ubuntu@instance-20260415-1214:~$
+```
+
+### 3. VM icinde repoyu guncelle
+
+```bash
+cd ~/akilli-toplanti-analizi
+git remote -v
+git pull --ff-only origin master || git pull --ff-only akilli-toplanti-analizi master
+```
+
+### 4. Docker stack'i yeniden build et ve ayaga kaldir
+
+```bash
+docker compose --env-file compose.oracle.env -f docker-compose.oracle.yml up -d --build
+docker compose --env-file compose.oracle.env -f docker-compose.oracle.yml ps
+docker compose --env-file compose.oracle.env -f docker-compose.oracle.yml logs --tail 120 gateway backend
+```
+
+## Onemli Notlar
+
+- `git pull` ve `docker compose` komutlari Windows'ta degil, Ubuntu VM icinde calistirilmalidir.
+- `compose.oracle.env` dosyasi proje klasoru icinde bulunmalidir.
+- Windows tarafinda `Docker Desktop` kapaliysa yerel `docker compose` komutlari calismaz.
+- Sunucuda remote adi `origin` degilse ikinci `git pull` alternatifi kullanilabilir.
+
+## Kayitlar Nereye Yazilir
+
+Canli sunucuda participant bazli kayitlar ve analiz ciktilari su klasore yazilir:
+
+```bash
+/home/ubuntu/akilli-toplanti-analizi/meeting_analyzer/recordings
+```
+
+Ornek yapi:
+
+```text
+recordings/toplanti1/individual/par_xxxxxx-20260416T124603.webm
+recordings/toplanti1/individual/par_yyyyyy-20260416T124622.webm
+recordings/toplanti1/analysis/speech_segments.json
+recordings/toplanti1/analysis/speakers.rttm
+```
+
+## Toplanti Analizi Ciktilari
+
+Guncel akista:
+
+- her katilimcinin mikrofonu ayri kaydedilir
+- kayitlar backend'e yuklenir
+- analiz servisi `speech_segments.json` uretir
+- `speakers.rttm` dosyasi olusturulur
+
+Bu sayede:
+
+- kim hangi saniyede konustu
+- hangi participant ne kadar konustu
+- overlap olan bolgeler
+
+gibi bilgiler cikartilabilir.
+
+## Ilgili Dokumanlar
+
+- `LIVEKIT_ORACLE.md`

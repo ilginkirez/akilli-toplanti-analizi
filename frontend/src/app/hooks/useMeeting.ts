@@ -40,6 +40,12 @@ export interface MeetingState {
   connectionMessage: string | null;
 }
 
+type StreamCacheEntry = {
+  audioTrack: MediaStreamTrack | null;
+  videoTrack: MediaStreamTrack | null;
+  stream: MediaStream | null;
+};
+
 function parseMetadata(metadata?: string): Record<string, unknown> {
   if (!metadata) {
     return {};
@@ -53,7 +59,10 @@ function parseMetadata(metadata?: string): Record<string, unknown> {
   }
 }
 
-function buildParticipantModel(participant: LiveKitParticipant): Participant {
+function buildParticipantModel(
+  participant: LiveKitParticipant,
+  streamCache: Map<string, StreamCacheEntry>,
+): Participant {
   const metadata = parseMetadata(participant.metadata);
   const audioPublication = participant.getTrackPublication(Track.Source.Microphone);
   const videoPublication =
@@ -62,9 +71,24 @@ function buildParticipantModel(participant: LiveKitParticipant): Participant {
 
   const audioTrack = audioPublication?.audioTrack?.mediaStreamTrack ?? null;
   const videoTrack = videoPublication?.videoTrack?.mediaStreamTrack ?? null;
-  const tracks = [audioTrack, videoTrack].filter(
-    (track): track is MediaStreamTrack => track !== null,
-  );
+  const cacheKey = participant.identity;
+  const cachedEntry = streamCache.get(cacheKey);
+  let stream = cachedEntry?.stream ?? null;
+
+  if (
+    cachedEntry?.audioTrack !== audioTrack ||
+    cachedEntry?.videoTrack !== videoTrack
+  ) {
+    const tracks = [audioTrack, videoTrack].filter(
+      (track): track is MediaStreamTrack => track !== null,
+    );
+    stream = tracks.length > 0 ? new MediaStream(tracks) : null;
+    streamCache.set(cacheKey, {
+      audioTrack,
+      videoTrack,
+      stream,
+    });
+  }
 
   return {
     id: participant.identity,
@@ -80,7 +104,7 @@ function buildParticipantModel(participant: LiveKitParticipant): Participant {
     isSpeaking: participant.isSpeaking,
     audioLevel: participant.audioLevel,
     lastSpokeAt: participant.lastSpokeAt?.getTime() ?? null,
-    stream: tracks.length > 0 ? new MediaStream(tracks) : null,
+    stream,
     audioTrack,
     videoTrack,
   };
@@ -149,10 +173,24 @@ export function useMeeting() {
   const recordingTrackRef = useRef<MediaStreamTrack | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
   const recordingStartedAtRef = useRef<string | null>(null);
+  const streamCacheRef = useRef<Map<string, StreamCacheEntry>>(new Map());
 
   const syncRoomState = useCallback((room: Room) => {
-    const localParticipant = buildParticipantModel(room.localParticipant);
-    const remoteParticipants = Array.from(room.remoteParticipants.values()).map(buildParticipantModel);
+    const activeParticipantIds = new Set<string>([
+      room.localParticipant.identity,
+      ...Array.from(room.remoteParticipants.values()).map((participant) => participant.identity),
+    ]);
+
+    for (const cachedParticipantId of streamCacheRef.current.keys()) {
+      if (!activeParticipantIds.has(cachedParticipantId)) {
+        streamCacheRef.current.delete(cachedParticipantId);
+      }
+    }
+
+    const localParticipant = buildParticipantModel(room.localParticipant, streamCacheRef.current);
+    const remoteParticipants = Array.from(room.remoteParticipants.values()).map((participant) =>
+      buildParticipantModel(participant, streamCacheRef.current),
+    );
 
     setState((current) => ({
       ...current,
@@ -183,6 +221,7 @@ export function useMeeting() {
     sessionIdRef.current = null;
     participantIdRef.current = null;
     connectionIdRef.current = null;
+    streamCacheRef.current.clear();
   }, []);
 
   const startLocalAudioRecording = useCallback(async (room: Room) => {

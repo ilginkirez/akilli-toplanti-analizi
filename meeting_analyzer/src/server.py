@@ -35,7 +35,6 @@ def health_check():
     )
     return {
         "status": "ok",
-        "openvidu_connected": False,
         "livekit_connected": livekit_service.is_configured(),
         "rtc_provider": "livekit",
         "active_sessions": session_count,

@@ -1,5 +1,4 @@
 services:
-  # 0. Redis (Message Queue)
   redis:
     image: redis:7-alpine
     ports:
@@ -7,32 +6,53 @@ services:
     networks:
       - meeting-net
 
-  # 1. OpenVidu Server (Development Mode)
-  openvidu:
-    image: openvidu/openvidu-dev:2.30.0
+  livekit:
+    image: livekit/livekit-server:latest
+    command:
+      - --config-body
+      - |
+        port: 7880
+        rtc:
+          tcp_port: 7881
+          port_range_start: ${LIVEKIT_RTC_UDP_START:-50000}
+          port_range_end: ${LIVEKIT_RTC_UDP_END:-50100}
+          use_external_ip: false
+          allow_tcp_fallback: true
+        room:
+          empty_timeout: ${LIVEKIT_ROOM_EMPTY_TIMEOUT:-300}
+          departure_timeout: ${LIVEKIT_ROOM_DEPARTURE_TIMEOUT:-20}
+        keys:
+          ${LIVEKIT_API_KEY:-devkey}: ${LIVEKIT_API_SECRET:-devsecret}
     ports:
-      - "4443:${HTTPS_PORT:-4443}"
-    environment:
-      - DOMAIN_OR_PUBLIC_IP=${DOMAIN_OR_PUBLIC_IP:-localhost}
-      - HTTPS_PORT=${HTTPS_PORT:-4443}
-      - FORCE_PLAIN_HTTP=${FORCE_PLAIN_HTTP:-true}
-      - OPENVIDU_SECRET=${OPENVIDU_SECRET:-MY_SECRET}
-      - OPENVIDU_RECORDING=true
-      - OPENVIDU_RECORDING_PATH=/opt/openvidu/recordings
-      - OPENVIDU_RECORDING_AUTOSTOP_TIMEOUT=5
-      - OPENVIDU_CDR=true
-      - OPENVIDU_CDR_PATH=/opt/openvidu/cdr
-      - OPENVIDU_WEBHOOK=true
-      - OPENVIDU_WEBHOOK_ENDPOINT=${OPENVIDU_WEBHOOK_ENDPOINT:-http://backend:8000/api/openvidu/webhook}
-      - OPENVIDU_WEBHOOK_EVENTS=["sessionCreated","sessionDestroyed","participantJoined","participantLeft","webrtcConnectionCreated","webrtcConnectionDestroyed","recordingStatusChanged"]
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./meeting_analyzer/recordings:/opt/openvidu/recordings
-      - ./meeting_analyzer/cdr:/opt/openvidu/cdr
+      - "${LIVEKIT_RTC_TCP_PORT:-7881}:7881/tcp"
+      - "${LIVEKIT_RTC_UDP_START:-50000}-${LIVEKIT_RTC_UDP_END:-50100}:${LIVEKIT_RTC_UDP_START:-50000}-${LIVEKIT_RTC_UDP_END:-50100}/udp"
     networks:
       - meeting-net
 
-  # 2. Python Backend (FastAPI)
+  coturn:
+    image: coturn/coturn:4.6.3
+    command:
+      - -n
+      - --fingerprint
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_SECRET:-turnsecret}
+      - --realm=${TURN_DOMAIN:-localhost}
+      - --server-name=${TURN_DOMAIN:-localhost}
+      - --listening-ip=0.0.0.0
+      - --external-ip=${PUBLIC_IP:-127.0.0.1}
+      - --listening-port=3478
+      - --min-port=${TURN_RELAY_START:-51000}
+      - --max-port=${TURN_RELAY_END:-51100}
+      - --no-cli
+      - --no-multicast-peers
+    ports:
+      - "3478:3478/tcp"
+      - "3478:3478/udp"
+      - "${TURN_RELAY_START:-51000}-${TURN_RELAY_END:-51100}:${TURN_RELAY_START:-51000}-${TURN_RELAY_END:-51100}/tcp"
+      - "${TURN_RELAY_START:-51000}-${TURN_RELAY_END:-51100}:${TURN_RELAY_START:-51000}-${TURN_RELAY_END:-51100}/udp"
+    networks:
+      - meeting-net
+
   backend:
     build:
       context: ./meeting_analyzer
@@ -40,9 +60,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - OPENVIDU_URL=${OPENVIDU_URL:-http://openvidu:4443}
-      - OPENVIDU_SECRET=${OPENVIDU_SECRET:-MY_SECRET}
-      - SSL_VERIFY=${SSL_VERIFY:-false}
+      - LIVEKIT_API_URL=${LIVEKIT_API_URL:-http://livekit:7880}
+      - LIVEKIT_WS_URL=${LIVEKIT_WS_URL:-ws://localhost:7880}
+      - LIVEKIT_API_KEY=${LIVEKIT_API_KEY:-devkey}
+      - LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET:-devsecret}
+      - LIVEKIT_ROOM_EMPTY_TIMEOUT=${LIVEKIT_ROOM_EMPTY_TIMEOUT:-300}
+      - LIVEKIT_ROOM_DEPARTURE_TIMEOUT=${LIVEKIT_ROOM_DEPARTURE_TIMEOUT:-20}
+      - LIVEKIT_ROOM_MAX_PARTICIPANTS=${LIVEKIT_ROOM_MAX_PARTICIPANTS:-4}
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
     volumes:
@@ -50,12 +74,12 @@ services:
       - ./meeting_analyzer/recordings:/app/recordings
       - /tmp/audio:/tmp/audio
     depends_on:
-      - openvidu
       - redis
+      - livekit
+      - coturn
     networks:
       - meeting-net
 
-  # 2.1 Celery Worker (Async Audio Processing)
   celery_worker:
     build:
       context: ./meeting_analyzer
@@ -74,7 +98,6 @@ services:
     deploy:
       replicas: 2
 
-  # 2.2 Celery Beat (Scheduled Tasks)
   celery_beat:
     build:
       context: ./meeting_analyzer
@@ -87,7 +110,6 @@ services:
     networks:
       - meeting-net
 
-  # 3. React Frontend (Vite)
   frontend:
     build:
       context: ./frontend

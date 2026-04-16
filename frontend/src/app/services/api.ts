@@ -68,7 +68,6 @@ export interface SessionStopResult {
 
 export interface HealthCheck {
   status: string;
-  openvidu_connected: boolean;
   livekit_connected?: boolean;
   rtc_provider?: string;
   active_sessions: number;
