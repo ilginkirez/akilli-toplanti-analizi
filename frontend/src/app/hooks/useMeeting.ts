@@ -174,6 +174,7 @@ export function useMeeting() {
   const recordedChunksRef = useRef<Blob[]>([]);
   const recordingStartedAtRef = useRef<string | null>(null);
   const streamCacheRef = useRef<Map<string, StreamCacheEntry>>(new Map());
+  const activeSpeakerSyncTimeoutRef = useRef<number | null>(null);
 
   const syncRoomState = useCallback((room: Room) => {
     const activeParticipantIds = new Set<string>([
@@ -216,12 +217,24 @@ export function useMeeting() {
       .catch(() => setState((current) => ({ ...current, backendConnected: false })));
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (activeSpeakerSyncTimeoutRef.current !== null) {
+        window.clearTimeout(activeSpeakerSyncTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const cleanupRoom = useCallback(() => {
     roomRef.current = null;
     sessionIdRef.current = null;
     participantIdRef.current = null;
     connectionIdRef.current = null;
     streamCacheRef.current.clear();
+    if (activeSpeakerSyncTimeoutRef.current !== null) {
+      window.clearTimeout(activeSpeakerSyncTimeoutRef.current);
+      activeSpeakerSyncTimeoutRef.current = null;
+    }
   }, []);
 
   const startLocalAudioRecording = useCallback(async (room: Room) => {
@@ -397,6 +410,16 @@ export function useMeeting() {
     isLeavingRef.current = false;
 
     const handleStateRefresh = () => syncRoomState(room);
+    const handleActiveSpeakersRefresh = () => {
+      if (activeSpeakerSyncTimeoutRef.current !== null) {
+        return;
+      }
+
+      activeSpeakerSyncTimeoutRef.current = window.setTimeout(() => {
+        activeSpeakerSyncTimeoutRef.current = null;
+        syncRoomState(room);
+      }, 120);
+    };
 
     room
       .on(RoomEvent.Connected, () => {
@@ -416,7 +439,7 @@ export function useMeeting() {
       .on(RoomEvent.TrackUnmuted, handleStateRefresh)
       .on(RoomEvent.LocalTrackPublished, handleStateRefresh)
       .on(RoomEvent.LocalTrackUnpublished, handleStateRefresh)
-      .on(RoomEvent.ActiveSpeakersChanged, handleStateRefresh)
+      .on(RoomEvent.ActiveSpeakersChanged, handleActiveSpeakersRefresh)
       .on(RoomEvent.ParticipantMetadataChanged, handleStateRefresh)
       .on(RoomEvent.ParticipantNameChanged, handleStateRefresh)
       .on(RoomEvent.ConnectionStateChanged, () => {
