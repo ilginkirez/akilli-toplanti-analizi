@@ -27,6 +27,7 @@ compose.prod.env
 compose.env
 .ngrok.exe.old
 recordings/
+downloads/
 src/storage/
 meeting_analyzer/src/storage/
 meeting_analyzer/src/storage/sessions/
