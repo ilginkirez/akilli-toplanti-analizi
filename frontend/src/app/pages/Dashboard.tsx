@@ -63,7 +63,7 @@ export function Dashboard() {
     .slice(0, 2);
 
   const taskChartData = [
-    { name: 'Tamamlandi', value: myMetrics?.tasksCompleted || 0, color: '#10b981' },
+    { name: 'Tamamlandı', value: myMetrics?.tasksCompleted || 0, color: '#10b981' },
     {
       name: 'Devam Eden',
       value:
@@ -72,7 +72,7 @@ export function Dashboard() {
         (myMetrics?.tasksOverdue || 0),
       color: '#3b82f6',
     },
-    { name: 'Gecikmis', value: myMetrics?.tasksOverdue || 0, color: '#ef4444' },
+    { name: 'Gecikmiş', value: myMetrics?.tasksOverdue || 0, color: '#ef4444' },
   ];
 
   const meetingVolumeData = upcomingMeetings.map((meeting) => ({
@@ -84,17 +84,17 @@ export function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-3xl font-bold text-transparent dark:from-white dark:to-gray-300">
-          Hos Geldiniz, {(user?.name ?? dataUser.name).split(' ')[0]}
+          Hoş Geldiniz, {(user?.name ?? dataUser.name).split(' ')[0]}
         </h1>
         <p className="mt-1 text-gray-600 dark:text-gray-400">
-          Bugunku toplanti ve gorev akisi burada sizi bekliyor.
+          Bugünkü toplantı ve görev akışı burada sizi bekliyor.
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-gray-200 bg-gradient-to-br from-white to-gray-50 dark:border-gray-800 dark:from-gray-900 dark:to-gray-950">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Yaklasan Toplantilar</CardTitle>
+            <CardTitle className="text-sm font-medium">Yaklaşan Toplantılar</CardTitle>
             <Calendar className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
@@ -105,20 +105,20 @@ export function Dashboard() {
 
         <Card className="border-gray-200 bg-gradient-to-br from-white to-gray-50 dark:border-gray-800 dark:from-gray-900 dark:to-gray-950">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Aktif Gorevler</CardTitle>
+            <CardTitle className="text-sm font-medium">Aktif Görevler</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{myTasks.length}</div>
             <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-              {myMetrics?.tasksOverdue || 0} gecikmis
+              {myMetrics?.tasksOverdue || 0} gecikmiş
             </p>
           </CardContent>
         </Card>
 
         <Card className="border-gray-200 bg-gradient-to-br from-white to-gray-50 dark:border-gray-800 dark:from-gray-900 dark:to-gray-950">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tamamlanma Orani</CardTitle>
+            <CardTitle className="text-sm font-medium">Tamamlanma Oranı</CardTitle>
             <TrendingUp className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
@@ -136,7 +136,7 @@ export function Dashboard() {
             <div className={`text-2xl font-bold ${getScoreColor(myMetrics?.productivityScore || 0)}`}>
               {myMetrics?.productivityScore || 0}
             </div>
-            <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">100 uzerinden</p>
+            <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">100 üzerinden</p>
           </CardContent>
         </Card>
       </div>
@@ -146,12 +146,12 @@ export function Dashboard() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Yaklasan Toplantilar</CardTitle>
-                <CardDescription>Gelecek birkac gunde sizi bekleyen oturumlar</CardDescription>
+                <CardTitle>Yaklaşan Toplantılar</CardTitle>
+                <CardDescription>Gelecek birkaç günde sizi bekleyen oturumlar</CardDescription>
               </div>
               <Link to="/meetings">
                 <Button variant="ghost" size="sm">
-                  Tumunu Gor
+                  Tümünü Gör
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
@@ -161,7 +161,7 @@ export function Dashboard() {
             {upcomingMeetings.length === 0 ? (
               <div className="py-8 text-center text-gray-500 dark:text-gray-400">
                 <Calendar className="mx-auto mb-3 h-12 w-12 opacity-50" />
-                <p>Yaklasan toplanti yok.</p>
+                <p>Yaklaşan toplantı yok.</p>
               </div>
             ) : (
               upcomingMeetings.map((meeting) => (
@@ -185,7 +185,7 @@ export function Dashboard() {
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="h-3 w-3" />
-                            {meeting.participants.length} kisi
+                            {meeting.participants.length} kişi
                           </span>
                         </div>
                         <div className="mt-2 flex items-center gap-1">
@@ -211,12 +211,12 @@ export function Dashboard() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Gorevlerim</CardTitle>
-                <CardDescription>Bekleyen ve devam eden isler</CardDescription>
+                <CardTitle>Görevlerim</CardTitle>
+                <CardDescription>Bekleyen ve devam eden işler</CardDescription>
               </div>
               <Link to="/tasks">
                 <Button variant="ghost" size="sm">
-                  Tumunu Gor
+                  Tümünü Gör
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
@@ -226,7 +226,7 @@ export function Dashboard() {
             {myTasks.length === 0 ? (
               <div className="py-8 text-center text-gray-500 dark:text-gray-400">
                 <CheckCircle2 className="mx-auto mb-3 h-12 w-12 opacity-50" />
-                <p>Bekleyen gorev yok.</p>
+                <p>Bekleyen görev yok.</p>
               </div>
             ) : (
               myTasks.map((task) => (
@@ -271,8 +271,8 @@ export function Dashboard() {
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="border-gray-200 dark:border-gray-800 lg:col-span-2">
           <CardHeader>
-            <CardTitle>Gorev Dagilimi</CardTitle>
-            <CardDescription>Son haftadaki is durumu</CardDescription>
+            <CardTitle>Görev Dağılımı</CardTitle>
+            <CardDescription>Son haftadaki iş durumu</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-64">
@@ -310,8 +310,8 @@ export function Dashboard() {
 
         <Card className="border-gray-200 dark:border-gray-800">
           <CardHeader>
-            <CardTitle>Son AI Ozeti</CardTitle>
-            <CardDescription>En son tamamlanan toplanti</CardDescription>
+            <CardTitle>Son AI Özeti</CardTitle>
+            <CardDescription>En son tamamlanan toplantı</CardDescription>
           </CardHeader>
           <CardContent>
             {recentMeetings.length > 0 && recentMeetings[0].aiSummary ? (
@@ -324,7 +324,7 @@ export function Dashboard() {
                 </div>
                 <div>
                   <h5 className="mb-2 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                    Onemli Kararlar
+                    Önemli Kararlar
                   </h5>
                   <ul className="space-y-1">
                     {recentMeetings[0].aiSummary.keyDecisions.slice(0, 2).map((decision, index) => (
@@ -337,7 +337,7 @@ export function Dashboard() {
                 </div>
                 <Link to={`/meetings/${recentMeetings[0].id}`}>
                   <Button variant="outline" size="sm" className="w-full">
-                    Detaylari Gor
+                    Detayları Gör
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
@@ -345,7 +345,7 @@ export function Dashboard() {
             ) : (
               <div className="py-8 text-center text-gray-500 dark:text-gray-400">
                 <Sparkles className="mx-auto mb-3 h-12 w-12 opacity-50" />
-                <p className="text-sm">Henuz AI ozeti yok.</p>
+                <p className="text-sm">Henüz AI özeti yok.</p>
               </div>
             )}
           </CardContent>
@@ -354,8 +354,8 @@ export function Dashboard() {
 
       <Card className="border-gray-200 dark:border-gray-800">
         <CardHeader>
-          <CardTitle>Toplanti Kapasitesi</CardTitle>
-          <CardDescription>Yaklasan toplanti bazinda katilimci yogunlugu</CardDescription>
+          <CardTitle>Toplantı Kapasitesi</CardTitle>
+          <CardDescription>Yaklaşan toplantı bazında katılımcı yoğunluğu</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-64">

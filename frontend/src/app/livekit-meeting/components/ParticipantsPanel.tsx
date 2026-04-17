@@ -33,7 +33,7 @@ export function ParticipantsPanel({
   return (
     <div className="flex h-full w-80 flex-col border-l border-gray-800 bg-gray-900">
       <div className="flex items-center justify-between border-b border-gray-800 px-4 py-3">
-        <h3 className="font-medium text-white">Katilimcilar ({participants.length})</h3>
+        <h3 className="font-medium text-white">Katılımcılar ({participants.length})</h3>
         <button onClick={onClose} className="rounded p-1 text-gray-400 hover:bg-gray-800 hover:text-white">
           <X size={20} />
         </button>
@@ -78,10 +78,10 @@ export function ParticipantsPanel({
                   className={`p-1 transition md:opacity-0 md:group-hover:opacity-100 ${
                     participant.isPinned ? 'text-amber-300 hover:text-amber-200' : 'text-gray-400 hover:text-white'
                   }`}
-                  title={participant.isPinned ? 'Sabitlemeyi kaldir' : 'Sabitle'}
+                  title={participant.isPinned ? 'Sabitlemeyi kaldır' : 'Sabitle'}
                   aria-label={
                     participant.isPinned
-                      ? `${participant.name} sabitlemesini kaldir`
+                      ? `${participant.name} sabitlemesini kaldır`
                       : `${participant.name} sabitle`
                   }
                 >

@@ -41,8 +41,8 @@ export function Layout() {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { name: 'Toplantilar', href: '/meetings', icon: Calendar },
-    { name: 'Gorevler', href: '/tasks', icon: CheckSquare },
+    { name: 'Toplantılar', href: '/meetings', icon: Calendar },
+    { name: 'Görevler', href: '/tasks', icon: CheckSquare },
     { name: 'Analitik', href: '/analytics', icon: BarChart3 },
   ];
 
@@ -75,7 +75,7 @@ export function Layout() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
                 type="search"
-                placeholder="Toplanti, gorev veya kisi ara..."
+                placeholder="Toplantı, görev veya kişi ara..."
                 className="border-gray-200 bg-gray-50 pl-10 dark:border-gray-800 dark:bg-gray-900"
               />
             </div>
@@ -107,7 +107,7 @@ export function Layout() {
                 <Button variant="ghost" className="gap-2 rounded-full px-2">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user?.avatar} />
-                    <AvatarFallback>{getInitials(user?.name || 'Kullanici')}</AvatarFallback>
+                    <AvatarFallback>{getInitials(user?.name || 'Kullanıcı')}</AvatarFallback>
                   </Avatar>
                   <span className="hidden text-sm md:inline">{user?.name}</span>
                 </Button>
@@ -124,7 +124,7 @@ export function Layout() {
                 <DropdownMenuItem>Ayarlar</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-red-600" onClick={logout}>
-                  Cikis Yap
+                  Çıkış Yap
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -162,7 +162,7 @@ export function Layout() {
               className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-3 text-sm font-medium text-white shadow-lg shadow-green-500/20 transition-all hover:shadow-xl hover:shadow-green-500/30"
             >
               <Plus className="h-5 w-5" />
-              Yeni Toplanti
+              Yeni Toplantı
             </NavLink>
           </nav>
 
@@ -174,7 +174,7 @@ export function Layout() {
                   Sistem Durumu
                 </span>
               </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Tum sistemler calisiyor</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Tüm sistemler çalışıyor</p>
             </div>
           </div>
         </aside>

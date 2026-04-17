@@ -68,8 +68,8 @@ export function CreateMeeting() {
         if (!isMounted) {
           return;
         }
-        toast.error('Sirket kullanicilari yuklenemedi', {
-          description: error?.message ?? 'Kullanici dizini okunamadi.',
+        toast.error('Şirket kullanıcıları yüklenemedi', {
+          description: error?.message ?? 'Kullanıcı dizini okunamadı.',
         });
       })
       .finally(() => {
@@ -118,7 +118,7 @@ export function CreateMeeting() {
 
   const handleAddGuest = () => {
     if (!guestDraft.name.trim() || !guestDraft.email.trim()) {
-      toast.error('Harici katilimci icin ad ve e-posta gerekli.');
+      toast.error('Harici katılımcı için ad ve e-posta gereklidir.');
       return;
     }
 
@@ -127,14 +127,14 @@ export function CreateMeeting() {
       participantType: 'external_guest',
       name: guestDraft.name.trim(),
       email: guestDraft.email.trim(),
-      department: guestDraft.department.trim() || 'Harici Katilimci',
+      department: guestDraft.department.trim() || 'Harici Katılımcı',
       role: 'member',
     };
 
     setExternalGuests((current) => {
       const exists = current.some((item) => item.email.toLowerCase() === nextGuest.email.toLowerCase());
       if (exists) {
-        toast.error('Bu e-posta ile harici katilimci zaten eklendi.');
+        toast.error('Bu e-posta ile bir harici katılımcı zaten eklendi.');
         return current;
       }
       return [...current, nextGuest];
@@ -176,17 +176,17 @@ export function CreateMeeting() {
     event.preventDefault();
 
     if (!user) {
-      toast.error('Aktif kullanici bulunamadi. Lutfen tekrar giris yapin.');
+      toast.error('Aktif kullanıcı bulunamadı. Lütfen tekrar giriş yapın.');
       return;
     }
 
     if (!title || !date || !startTime || !endTime) {
-      toast.error('Lutfen tum zorunlu alanlari doldurun');
+      toast.error('Lütfen tüm zorunlu alanları doldurun.');
       return;
     }
 
     if (selectedMemberIds.length + externalGuests.length === 0) {
-      toast.error('Lutfen en az bir katilimci secin veya harici misafir ekleyin');
+      toast.error('Lütfen en az bir katılımcı seçin veya harici misafir ekleyin.');
       return;
     }
 
@@ -194,12 +194,12 @@ export function CreateMeeting() {
     const endDateTime = new Date(`${date}T${endTime}:00`);
 
     if (Number.isNaN(startDateTime.getTime()) || Number.isNaN(endDateTime.getTime())) {
-      toast.error('Toplanti tarihini ve saatlerini gecerli girin');
+      toast.error('Toplantı tarihini ve saatlerini geçerli biçimde girin.');
       return;
     }
 
     if (endDateTime <= startDateTime) {
-      toast.error('Bitis saati baslangic saatinden sonra olmali');
+      toast.error('Bitiş saati başlangıç saatinden sonra olmalıdır.');
       return;
     }
 
@@ -237,14 +237,14 @@ export function CreateMeeting() {
         organizer: user,
       });
 
-      toast.success('Toplanti basariyla olusturuldu', {
-        description: 'Detay sayfasina yonlendiriliyorsunuz.',
+      toast.success('Toplantı başarıyla oluşturuldu', {
+        description: 'Detay sayfasına yönlendiriliyorsunuz.',
       });
 
       navigate(`/meetings/${meeting.id}`);
     } catch (error: any) {
-      toast.error('Toplanti olusturulamadi', {
-        description: error?.message ?? 'Backend istegi basarisiz oldu.',
+      toast.error('Toplantı oluşturulamadı', {
+        description: error?.message ?? 'Backend isteği başarısız oldu.',
       });
     }
   };
@@ -257,11 +257,11 @@ export function CreateMeeting() {
         </Button>
         <div>
           <h1 className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-3xl font-bold text-transparent dark:from-white dark:to-gray-300">
-            Yeni Toplanti Olustur
+            Yeni Toplantı Oluştur
           </h1>
           <p className="mt-1 text-gray-600 dark:text-gray-400">
-            Sirket icinden calisan ekle, gerekirse harici misafir davet et ve toplantiyi gercek
-            veriyle planla.
+            Şirket içinden çalışan ekleyin, gerekirse harici misafir davet edin ve toplantıyı
+            gerçek verilerle planlayın.
           </p>
         </div>
       </div>
@@ -270,24 +270,24 @@ export function CreateMeeting() {
         <Card className="border-gray-200 dark:border-gray-800">
           <CardHeader>
             <CardTitle>Temel Bilgiler</CardTitle>
-            <CardDescription>Baslik, aciklama ve toplanti amaci</CardDescription>
+            <CardDescription>Başlık, açıklama ve toplantı amacı</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Toplanti Basligi *</Label>
+              <Label htmlFor="title">Toplantı Başlığı *</Label>
               <Input
                 id="title"
-                placeholder="Ornek: Q2 Strateji Toplantisi"
+                placeholder="Örnek: Q2 Strateji Toplantısı"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Aciklama</Label>
+              <Label htmlFor="description">Açıklama</Label>
               <Textarea
                 id="description"
-                placeholder="Toplantinin amacini ve konularini yazin..."
+                placeholder="Toplantının amacını ve konularını yazın..."
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 rows={4}
@@ -302,7 +302,7 @@ export function CreateMeeting() {
               <CalendarIcon className="h-5 w-5" />
               Tarih ve Saat
             </CardTitle>
-            <CardDescription>Baslangic ve bitis zamanini belirleyin</CardDescription>
+            <CardDescription>Başlangıç ve bitiş zamanını belirleyin</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
@@ -310,7 +310,7 @@ export function CreateMeeting() {
               <Input id="date" type="date" value={date} onChange={(event) => setDate(event.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="startTime">Baslangic Saati *</Label>
+              <Label htmlFor="startTime">Başlangıç Saati *</Label>
               <Input
                 id="startTime"
                 type="time"
@@ -320,7 +320,7 @@ export function CreateMeeting() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="endTime">Bitis Saati *</Label>
+              <Label htmlFor="endTime">Bitiş Saati *</Label>
               <Input
                 id="endTime"
                 type="time"
@@ -336,18 +336,18 @@ export function CreateMeeting() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />
-              Sirket Ici Katilimcilar
+              Şirket İçi Katılımcılar
             </CardTitle>
             <CardDescription>
               {user?.companyName || user?.companyCode
-                ? `${user.companyName ?? user.companyCode} ekibinden kullanicilar`
-                : 'Bu hesap bir sirket dizinine bagli degil'}
+                ? `${user.companyName ?? user.companyCode} ekibinden kullanıcılar`
+                : 'Bu hesap bir şirket dizinine bağlı değil'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {selectedMembers.length > 0 && (
               <div className="space-y-2">
-                <Label>Secilen Calisanlar</Label>
+                <Label>Seçilen Çalışanlar</Label>
                 <div className="flex flex-wrap gap-2">
                   {selectedMembers.map((member) => (
                     <Badge key={member.id} variant="secondary" className="flex items-center gap-2 py-1 pl-2 pr-1">
@@ -370,14 +370,14 @@ export function CreateMeeting() {
             )}
 
             {!user?.companyId ? (
-              <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
-                Bu kullanici bir sirket koduna bagli degil. Sirket ici kisi secmek icin uye olurken
-                veya profilinde sirket kodu kullanilmasi gerekir.
+                <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
+                Bu kullanıcı bir şirket koduna bağlı değil. Şirket içi kişi seçebilmek için üyelik
+                sırasında veya profilinde şirket kodu kullanılması gerekir.
               </div>
             ) : (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="member-search">Sirket Icisinde Ara</Label>
+                  <Label htmlFor="member-search">Şirket İçinde Ara</Label>
                   <div className="relative">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <Input
@@ -392,11 +392,11 @@ export function CreateMeeting() {
 
                 {membersLoading ? (
                   <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
-                    Sirket dizini yukleniyor...
+                    Şirket dizini yükleniyor...
                   </div>
                 ) : availableMembers.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
-                    Secilebilir baska sirket kullanicisi bulunamadi.
+                    Seçilebilir başka şirket kullanıcısı bulunamadı.
                   </div>
                 ) : (
                   <div className="grid gap-3 md:grid-cols-2">
@@ -430,14 +430,14 @@ export function CreateMeeting() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Harici Katilimcilar
+              Harici Katılımcılar
             </CardTitle>
-            <CardDescription>Musteri, aday, partner veya sirket disi konuklari ekleyin</CardDescription>
+            <CardDescription>Müşteri, aday, partner veya şirket dışı konukları ekleyin</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {externalGuests.length > 0 && (
               <div className="space-y-2">
-                <Label>Eklenen Harici Katilimcilar</Label>
+                <Label>Eklenen Harici Katılımcılar</Label>
                 <div className="space-y-2">
                   {externalGuests.map((guest) => (
                     <div
@@ -465,7 +465,7 @@ export function CreateMeeting() {
                   id="guest-name"
                   value={guestDraft.name}
                   onChange={(event) => setGuestDraft((current) => ({ ...current, name: event.target.value }))}
-                  placeholder="Ornek: Deniz Kaya"
+                  placeholder="Örnek: Deniz Kaya"
                 />
               </div>
               <div className="space-y-2">
@@ -488,7 +488,7 @@ export function CreateMeeting() {
                   id="guest-department"
                   value={guestDraft.department}
                   onChange={(event) => setGuestDraft((current) => ({ ...current, department: event.target.value }))}
-                  placeholder="Musteri / Partner"
+                  placeholder="Müşteri / Partner"
                 />
               </div>
               <div className="flex items-end">
@@ -505,9 +505,9 @@ export function CreateMeeting() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              Gundem
+              Gündem
             </CardTitle>
-            <CardDescription>Maddeleri ekleyin ve sure verin</CardDescription>
+            <CardDescription>Maddeleri ekleyin ve süre verin</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {agendaItems.length > 0 && (
@@ -539,7 +539,7 @@ export function CreateMeeting() {
             <div className="flex gap-3">
               <div className="flex-1">
                 <Input
-                  placeholder="Gundem maddesi..."
+                  placeholder="Gündem maddesi..."
                   value={newAgendaItem}
                   onChange={(event) => setNewAgendaItem(event.target.value)}
                   onKeyDown={(event) => {
@@ -568,10 +568,10 @@ export function CreateMeeting() {
             <div className="flex items-start gap-3 rounded-lg border border-sky-200 bg-gradient-to-r from-sky-50 to-indigo-50 p-4 dark:border-sky-900 dark:from-sky-950/20 dark:to-indigo-950/20">
               <Sparkles className="mt-0.5 h-5 w-5 text-sky-600 dark:text-sky-400" />
               <div className="flex-1">
-                <h4 className="mb-1 text-sm font-semibold">Toplanti modeli</h4>
+                <h4 className="mb-1 text-sm font-semibold">Toplantı modeli</h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Sirket ici kullanicilar veritabanindan secilir, harici katilimcilar ise toplantiya
-                  misafir olarak eklenir.
+                  Şirket içi kullanıcılar veritabanından seçilir, harici katılımcılar ise
+                  toplantıya misafir olarak eklenir.
                 </p>
               </div>
             </div>
@@ -580,13 +580,13 @@ export function CreateMeeting() {
 
         <div className="flex items-center justify-end gap-3">
           <Button type="button" variant="outline" onClick={() => navigate('/meetings')}>
-            Iptal
+            İptal
           </Button>
           <Button
             type="submit"
             className="bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg shadow-blue-500/20 hover:from-blue-600 hover:to-purple-700"
           >
-            Toplanti Olustur
+            Toplantı Oluştur
           </Button>
         </div>
       </form>

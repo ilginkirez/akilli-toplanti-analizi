@@ -53,7 +53,7 @@ export function Login() {
     event.preventDefault();
 
     if (!loginEmail.trim() || !loginPassword.trim()) {
-      toast.error('E-posta ve sifre zorunlu.');
+      toast.error('E-posta ve şifre zorunludur.');
       return;
     }
 
@@ -63,11 +63,11 @@ export function Login() {
         email: loginEmail.trim(),
         password: loginPassword,
       });
-      toast.success('Oturum acildi.');
+      toast.success('Oturum açıldı.');
       navigate(redirectTo, { replace: true });
     } catch (error: any) {
-      toast.error('Giris basarisiz', {
-        description: error?.message ?? 'Bilgiler dogrulanamadi.',
+      toast.error('Giriş başarısız', {
+        description: error?.message ?? 'Bilgiler doğrulanamadı.',
       });
     } finally {
       setIsSubmitting(false);
@@ -78,12 +78,12 @@ export function Login() {
     event.preventDefault();
 
     if (!registerName.trim() || !registerEmail.trim() || !registerPassword.trim()) {
-      toast.error('Ad, e-posta ve sifre zorunlu.');
+      toast.error('Ad, e-posta ve şifre zorunludur.');
       return;
     }
 
     if (registerPassword !== registerPasswordConfirm) {
-      toast.error('Sifre tekrar alani ayni olmali.');
+      toast.error('Şifre tekrar alanı aynı olmalıdır.');
       return;
     }
 
@@ -97,11 +97,11 @@ export function Login() {
         companyCode: companyCode.trim() || undefined,
         companyName: companyName.trim() || undefined,
       });
-      toast.success('Hesap olusturuldu.');
+      toast.success('Hesap oluşturuldu.');
       navigate(redirectTo, { replace: true });
     } catch (error: any) {
-      toast.error('Uye olma basarisiz', {
-        description: error?.message ?? 'Kayit tamamlanamadi.',
+      toast.error('Üyelik oluşturulamadı', {
+        description: error?.message ?? 'Kayıt tamamlanamadı.',
       });
     } finally {
       setIsSubmitting(false);
@@ -117,27 +117,28 @@ export function Login() {
               <Calendar className="h-7 w-7" />
             </div>
             <h1 className="max-w-xl text-4xl font-semibold leading-tight text-slate-900">
-              Sirket ici kullanicilari ve harici misafirleri ayni toplanti akisinda yonetin.
+              Şirket içi çalışanları ve harici misafirleri tek bir toplantı akışında yönetin.
             </h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
-              Uygulama artik gercek SQLite kullanici kaydina bagli. Sirket kodu ile ekip dizinine
-              katilabilir, dogrudan diger calisanlari secip toplanti planlayabilirsiniz.
+              Uygulama artık gerçek SQLite tabanlı kullanıcı kayıt sistemiyle çalışmaktadır.
+              Kullanıcılar şirket kodu ile ekip dizinine dahil olabilir, çalışanlar ise ekip
+              arkadaşlarını doğrudan seçerek hızlıca toplantı planlayabilir.
             </p>
 
             <div className="mt-10 grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl border border-sky-100 bg-white/80 p-5">
-                <p className="text-sm font-semibold text-slate-900">Demo hesap</p>
+                <p className="text-sm font-semibold text-slate-900">Demo Hesap</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   E-posta: {DEMO_EMAIL}
                   <br />
-                  Sifre: {DEMO_PASSWORD}
+                  Şifre: {DEMO_PASSWORD}
                 </p>
               </div>
               <div className="rounded-2xl border border-sky-100 bg-white/80 p-5">
-                <p className="text-sm font-semibold text-slate-900">Sirket akisi</p>
+                <p className="text-sm font-semibold text-slate-900">Şirket Akışı</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Sirket kodu giren kullanicilar ayni ekip altinda listelenir. Kod yoksa hesap
-                  bagimsiz acilir.
+                  Şirket kodu ile kayıt olan kullanıcılar aynı ekip altında listelenir. Şirket
+                  kodu girilmeden oluşturulan hesaplar ise bağımsız kullanıcı olarak tanımlanır.
                 </p>
               </div>
             </div>
@@ -156,7 +157,7 @@ export function Login() {
                     mode === 'login' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500'
                   }`}
                 >
-                  Giris Yap
+                  Giriş Yap
                 </button>
                 <button
                   type="button"
@@ -165,17 +166,17 @@ export function Login() {
                     mode === 'register' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500'
                   }`}
                 >
-                  Uye Ol
+                  Üye Ol
                 </button>
               </div>
               <div>
                 <CardTitle className="text-2xl text-slate-950">
-                  {mode === 'login' ? 'Hesabina Giris Yap' : 'Yeni Hesap Olustur'}
+                  {mode === 'login' ? 'Hesabınıza Giriş Yapın' : 'Yeni Hesap Oluşturun'}
                 </CardTitle>
                 <CardDescription className="mt-1 text-sm leading-6 text-slate-600">
                   {mode === 'login'
-                    ? 'Gercek kullanici oturumu ile dashboard ve toplanti ekranlarina gec.'
-                    : 'Opsiyonel sirket kodu ile ekip dizinine katil veya bagimsiz hesap ac.'}
+                    ? 'Gerçek kullanıcı oturumu ile panel ve toplantı ekranlarına erişin.'
+                    : 'İsteğe bağlı şirket kodu ile ekip dizinine katılın veya bağımsız hesap oluşturun.'}
                 </CardDescription>
               </div>
             </CardHeader>
@@ -199,7 +200,7 @@ export function Login() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="login-password">Sifre</Label>
+                    <Label htmlFor="login-password">Şifre</Label>
                     <div className="relative">
                       <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       <Input
@@ -214,8 +215,8 @@ export function Login() {
                   </div>
 
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                    Demo hesap veritabanina seed edildi. Istiyorsan kendi kullanicinla da giris
-                    yapabilirsin.
+                    Demo hesap veritabanına hazır olarak eklenmiştir. İsterseniz kendi hesabınızla
+                    da giriş yapabilirsiniz.
                   </div>
 
                   <Button
@@ -223,7 +224,7 @@ export function Login() {
                     disabled={isSubmitting}
                     className="h-11 w-full bg-slate-950 text-white hover:bg-slate-800"
                   >
-                    {isSubmitting ? 'Giris yapiliyor...' : 'Dashboarda Gec'}
+                    {isSubmitting ? 'Giriş yapılıyor...' : "Panel'e Geç"}
                   </Button>
                 </form>
               ) : (
@@ -237,7 +238,7 @@ export function Login() {
                         value={registerName}
                         onChange={(event) => setRegisterName(event.target.value)}
                         className="pl-10"
-                        placeholder="Ornek: Ahmet Yilmaz"
+                        placeholder="Örnek: Ahmet Yılmaz"
                       />
                     </div>
                   </div>
@@ -263,13 +264,13 @@ export function Login() {
                       id="register-department"
                       value={registerDepartment}
                       onChange={(event) => setRegisterDepartment(event.target.value)}
-                      placeholder="Ornek: Urun Gelistirme"
+                      placeholder="Örnek: Ürün Geliştirme"
                     />
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="register-password">Sifre</Label>
+                      <Label htmlFor="register-password">Şifre</Label>
                       <Input
                         id="register-password"
                         type="password"
@@ -279,20 +280,20 @@ export function Login() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="register-password-confirm">Sifre Tekrar</Label>
+                      <Label htmlFor="register-password-confirm">Şifre Tekrar</Label>
                       <Input
                         id="register-password-confirm"
                         type="password"
                         value={registerPasswordConfirm}
                         onChange={(event) => setRegisterPasswordConfirm(event.target.value)}
-                        placeholder="Sifreyi tekrar gir"
+                        placeholder="Şifreyi tekrar girin"
                       />
                     </div>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="company-code">Sirket Kodu</Label>
+                      <Label htmlFor="company-code">Şirket Kodu</Label>
                       <Input
                         id="company-code"
                         value={companyCode}
@@ -301,19 +302,19 @@ export function Login() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="company-name">Sirket Adi</Label>
+                      <Label htmlFor="company-name">Şirket Adı</Label>
                       <Input
                         id="company-name"
                         value={companyName}
                         onChange={(event) => setCompanyName(event.target.value)}
-                        placeholder="Yeni kod kullaniyorsan doldur"
+                        placeholder="Yeni bir kod kullanıyorsanız doldurun"
                       />
                     </div>
                   </div>
 
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                    Sirket kodu girersen ayni ekipteki calisanlar toplanti ekraninda secilebilir.
-                    Kod bos kalirsa hesabin bagimsiz acilir.
+                    Şirket kodu girerseniz aynı ekipteki çalışanlar toplantı ekranında
+                    seçilebilir. Kod boş bırakılırsa hesabınız bağımsız olarak açılır.
                   </div>
 
                   <Button
@@ -321,7 +322,7 @@ export function Login() {
                     disabled={isSubmitting}
                     className="h-11 w-full bg-slate-950 text-white hover:bg-slate-800"
                   >
-                    {isSubmitting ? 'Hesap olusturuluyor...' : 'Hesap Olustur'}
+                    {isSubmitting ? 'Hesap oluşturuluyor...' : 'Hesap Oluştur'}
                   </Button>
                 </form>
               )}

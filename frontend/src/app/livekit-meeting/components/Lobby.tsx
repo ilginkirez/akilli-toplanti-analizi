@@ -59,7 +59,7 @@ export function Lobby({
             className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 backdrop-blur hover:bg-white/10"
           >
             <ArrowLeft size={16} />
-            Toplanti detayina don
+            Toplantı detayına dön
           </button>
         )}
 
@@ -71,7 +71,7 @@ export function Lobby({
             {meetingTitle || 'Meeting Analyzer'}
           </h1>
           <p className="text-sm text-gray-400">
-            Tam ekran LiveKit toplanti odasina gecmeden once bilgilerinizi kontrol edin.
+            Tam ekran LiveKit toplantı odasına geçmeden önce bilgilerinizi kontrol edin.
           </p>
         </div>
 
@@ -84,7 +84,7 @@ export function Lobby({
             }`}
           />
           <span className="text-xs text-gray-500">
-            {backendConnected ? 'Backend bagli' : 'Demo modu (backend yok)'}
+            {backendConnected ? 'Backend bağlı' : 'Demo modu (backend yok)'}
           </span>
         </div>
 
@@ -115,7 +115,7 @@ export function Lobby({
 
           <div className="mb-5">
             <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-gray-400">
-              Adiniz
+              Adınız
             </label>
             <div className="relative">
               <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
@@ -132,10 +132,10 @@ export function Lobby({
 
           <div className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
             <p className="text-sm leading-6 text-gray-200">
-              Ayni oturum ID ile birden fazla cihaz toplantiya baglanabilir.
+              Aynı oturum ID ile birden fazla cihaz toplantıya bağlanabilir.
             </p>
             <p className="mt-2 text-xs leading-5 text-gray-500">
-              Her baglanti icin ayri participant, connection ve stream bilgisi korunur.
+              Her bağlantı için ayrı participant, connection ve stream bilgisi korunur.
             </p>
           </div>
 
@@ -148,11 +148,11 @@ export function Lobby({
             {isJoining ? (
               <>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                <span>Baglaniyor...</span>
+                <span>Bağlanıyor...</span>
               </>
             ) : (
               <>
-                <span>Toplantiya Katil</span>
+                <span>Toplantıya Katıl</span>
                 <ChevronRight size={16} />
               </>
             )}

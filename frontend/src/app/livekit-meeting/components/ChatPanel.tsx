@@ -14,8 +14,8 @@ interface ChatPanelProps {
 
 export function ChatPanel({ onClose }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([
-    { id: 1, sender: 'Sistem', text: 'Toplanti odasina hos geldiniz.', time: '10:23' },
-    { id: 2, sender: 'Host', text: 'Kamera ve mikrofon kontrolleri asagida yer alir.', time: '10:25' },
+    { id: 1, sender: 'Sistem', text: 'Toplantı odasına hoş geldiniz.', time: '10:23' },
+    { id: 2, sender: 'Host', text: 'Kamera ve mikrofon kontrolleri aşağıda yer alır.', time: '10:25' },
   ]);
   const [newMessage, setNewMessage] = useState('');
 
@@ -71,7 +71,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
                 handleSendMessage();
               }
             }}
-            placeholder="Mesajinizi yazin..."
+            placeholder="Mesajınızı yazın..."
             className="flex-1 rounded-lg bg-gray-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button onClick={handleSendMessage} className="rounded-lg bg-blue-600 p-2 text-white hover:bg-blue-700">
