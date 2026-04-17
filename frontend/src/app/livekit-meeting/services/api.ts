@@ -230,6 +230,7 @@ export async function updateParticipantStream(
     session_id: string;
     connection_id: string;
     stream_id: string;
+    audio_track_id?: string;
     has_audio?: boolean;
     has_video?: boolean;
     video_source?: string;

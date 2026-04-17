@@ -628,6 +628,7 @@ export function useMeeting() {
           session_id: response.session_id,
           connection_id: connectionIdRef.current,
           stream_id: primaryTrackSid,
+          audio_track_id: microphonePublication?.trackSid,
           has_audio: Boolean(microphonePublication?.track),
           has_video: Boolean(cameraPublication?.track),
           video_source: cameraPublication?.track ? 'CAMERA' : 'NONE',

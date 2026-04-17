@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException
 
 from ..services.egress_recording_service import (
     maybe_finalize_session_recording,
+    start_audio_track_egress,
     stop_participant_egress,
 )
 from ..services import livekit_service
@@ -94,6 +95,15 @@ async def update_stream(participant_id: str, data: Dict[str, Any]):
         video_source=data.get("video_source"),
         media_type=data.get("media_type"),
     )
+
+    audio_track_id = data.get("audio_track_id")
+    if audio_track_id:
+        await start_audio_track_egress(
+            session_id=session_id,
+            participant_id=participant_id,
+            track_id=audio_track_id,
+            connection_id=connection_id,
+        )
 
     return {"status": "stream_updated", "participant_id": participant_id}
 
