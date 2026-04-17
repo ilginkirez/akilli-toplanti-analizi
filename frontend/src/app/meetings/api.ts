@@ -19,6 +19,8 @@ type ApiOrganizer = {
 };
 
 type ApiParticipant = {
+  user_id?: string | null;
+  participant_type?: 'internal_user' | 'external_guest' | null;
   name: string;
   email?: string | null;
   role?: User['role'];
@@ -132,8 +134,19 @@ export type CreateMeetingRequest = {
   scheduledStart: string;
   scheduledEnd: string;
   organizer: User;
-  participants: User[];
+  participants: CreateMeetingParticipantInput[];
   agenda: Array<Pick<AgendaItem, 'title' | 'duration'>>;
+};
+
+export type CreateMeetingParticipantInput = {
+  id: string;
+  userId?: string;
+  participantType: 'internal_user' | 'external_guest';
+  name: string;
+  email: string;
+  avatar?: string;
+  role: User['role'];
+  department: string;
 };
 
 function normalizeRole(role?: string | null): User['role'] {
@@ -141,8 +154,9 @@ function normalizeRole(role?: string | null): User['role'] {
 }
 
 function mapUser(base: ApiOrganizer | ApiParticipant, fallbackId: string): User {
+  const participant = base as ApiParticipant;
   return {
-    id: fallbackId,
+    id: participant.user_id ?? fallbackId,
     name: base.name,
     email: base.email ?? `${fallbackId}@local.invalid`,
     avatar: base.avatar ?? undefined,
@@ -295,6 +309,7 @@ export async function createMeeting(input: CreateMeetingRequest): Promise<Meetin
       scheduled_start: input.scheduledStart,
       scheduled_end: input.scheduledEnd,
       organizer: {
+        user_id: input.organizer.id,
         name: input.organizer.name,
         email: input.organizer.email,
         role: input.organizer.role,
@@ -302,6 +317,8 @@ export async function createMeeting(input: CreateMeetingRequest): Promise<Meetin
         avatar: input.organizer.avatar,
       },
       participants: input.participants.map((participant) => ({
+        user_id: participant.userId,
+        participant_type: participant.participantType,
         name: participant.name,
         email: participant.email,
         role: participant.role,

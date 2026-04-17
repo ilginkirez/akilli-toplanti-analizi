@@ -5,6 +5,11 @@ export interface User {
   avatar?: string;
   role: 'admin' | 'manager' | 'member';
   department: string;
+  companyId?: string;
+  companyCode?: string;
+  companyName?: string;
+  accountType?: 'company_member' | 'independent';
+  status?: string;
 }
 
 export interface Meeting {

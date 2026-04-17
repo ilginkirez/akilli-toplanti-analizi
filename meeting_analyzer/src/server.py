@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import dataset, events, livekit, meetings, participants, recordings, sessions
+from .routers import auth, dataset, events, livekit, meetings, participants, recordings, sessions
 from .services import livekit_service
 from .services.session_store import session_store
 
@@ -17,6 +17,7 @@ app.add_middleware(
 
 app.include_router(sessions.router,      prefix="/api/sessions", tags=["Sessions"])
 app.include_router(meetings.router,      prefix="/api/meetings", tags=["Meetings"])
+app.include_router(auth.router,          prefix="/api/auth", tags=["Auth"])
 app.include_router(participants.router,  prefix="/api/participants", tags=["Participants"])
 app.include_router(recordings.router,    prefix="/api/recordings", tags=["Recordings"])
 app.include_router(events.router,        prefix="/api/sessions", tags=["Events"])

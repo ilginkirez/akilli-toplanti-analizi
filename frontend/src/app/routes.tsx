@@ -11,6 +11,16 @@ import { Login } from './pages/Login';
 import { LiveKitMeetingRoom } from './pages/LiveKitMeetingRoom';
 import { useAuth } from './auth/AuthContext';
 
+function AuthLoadingScreen() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm text-slate-600 shadow-sm">
+        Oturum kontrol ediliyor...
+      </div>
+    </div>
+  );
+}
+
 function getRedirectTarget(state: unknown) {
   if (
     state &&
@@ -26,8 +36,12 @@ function getRedirectTarget(state: unknown) {
 }
 
 function ProtectedLayoutRoute() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
+
+  if (isLoading) {
+    return <AuthLoadingScreen />;
+  }
 
   if (!isAuthenticated) {
     const from = `${location.pathname}${location.search}${location.hash}`;
@@ -38,8 +52,12 @@ function ProtectedLayoutRoute() {
 }
 
 function ProtectedMeetingRoomRoute() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
+
+  if (isLoading) {
+    return <AuthLoadingScreen />;
+  }
 
   if (!isAuthenticated) {
     const from = `${location.pathname}${location.search}${location.hash}`;
@@ -50,8 +68,12 @@ function ProtectedMeetingRoomRoute() {
 }
 
 function LoginRoute() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
+
+  if (isLoading) {
+    return <AuthLoadingScreen />;
+  }
 
   if (isAuthenticated) {
     return <Navigate to={getRedirectTarget(location.state)} replace />;

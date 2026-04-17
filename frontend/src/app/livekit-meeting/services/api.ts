@@ -1,3 +1,6 @@
+import { loadStoredAuthSession } from '../../auth/storage';
+
+
 function resolveApiBase() {
   const configured = import.meta.env.VITE_API_URL?.trim();
   if (configured) {
@@ -79,9 +82,17 @@ export interface JoinTokenResponse {
 
 export async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const url = API_BASE ? `${API_BASE}${path}` : path;
+  const session = loadStoredAuthSession();
+  const headers = new Headers(options?.headers ?? undefined);
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+  if (session?.token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${session.token}`);
+  }
   const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
     ...options,
+    headers,
   });
 
   if (!res.ok) {
@@ -94,8 +105,14 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
 
 export async function uploadRequest<T>(path: string, body: FormData): Promise<T> {
   const url = API_BASE ? `${API_BASE}${path}` : path;
+  const session = loadStoredAuthSession();
+  const headers = new Headers();
+  if (session?.token) {
+    headers.set('Authorization', `Bearer ${session.token}`);
+  }
   const res = await fetch(url, {
     method: 'POST',
+    headers,
     body,
   });
 

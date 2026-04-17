@@ -22,6 +22,23 @@ class MeetingStore:
         connection.row_factory = sqlite3.Row
         return connection
 
+    def _ensure_column(
+        self,
+        connection: sqlite3.Connection,
+        *,
+        table_name: str,
+        column_name: str,
+        column_sql: str,
+    ) -> None:
+        columns = {
+            row["name"]
+            for row in connection.execute(f"PRAGMA table_info({table_name})").fetchall()
+        }
+        if column_name not in columns:
+            connection.execute(
+                f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_sql}"
+            )
+
     def _initialize(self) -> None:
         with self._connect() as connection:
             connection.executescript(
@@ -46,11 +63,13 @@ class MeetingStore:
                 CREATE TABLE IF NOT EXISTS meeting_participants (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     meeting_id TEXT NOT NULL,
+                    user_id TEXT,
                     name TEXT NOT NULL,
                     email TEXT,
                     role TEXT,
                     department TEXT,
                     avatar TEXT,
+                    participant_type TEXT NOT NULL DEFAULT 'external_guest',
                     response_status TEXT NOT NULL DEFAULT 'pending',
                     position INTEGER NOT NULL DEFAULT 0,
                     FOREIGN KEY(meeting_id) REFERENCES meetings(id) ON DELETE CASCADE
@@ -67,6 +86,18 @@ class MeetingStore:
                 );
                 """
             )
+            self._ensure_column(
+                connection,
+                table_name="meeting_participants",
+                column_name="user_id",
+                column_sql="TEXT",
+            )
+            self._ensure_column(
+                connection,
+                table_name="meeting_participants",
+                column_name="participant_type",
+                column_sql="TEXT NOT NULL DEFAULT 'external_guest'",
+            )
 
     def _generate_meeting_id(self) -> str:
         return f"m-{uuid4().hex[:8]}"
@@ -74,7 +105,7 @@ class MeetingStore:
     def _fetch_participants(self, connection: sqlite3.Connection, meeting_id: str) -> List[Dict[str, Any]]:
         rows = connection.execute(
             """
-            SELECT name, email, role, department, avatar, response_status, position
+            SELECT user_id, name, email, role, department, avatar, participant_type, response_status, position
             FROM meeting_participants
             WHERE meeting_id = ?
             ORDER BY position ASC, id ASC
@@ -173,16 +204,18 @@ class MeetingStore:
                 connection.execute(
                     """
                     INSERT INTO meeting_participants (
-                        meeting_id, name, email, role, department, avatar, response_status, position
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        meeting_id, user_id, name, email, role, department, avatar, participant_type, response_status, position
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         meeting_id,
+                        participant.get("user_id"),
                         participant.get("name") or "Unknown",
                         participant.get("email"),
                         participant.get("role"),
                         participant.get("department"),
                         participant.get("avatar"),
+                        participant.get("participant_type") or "external_guest",
                         participant.get("response_status") or "pending",
                         index,
                     ),

@@ -9,6 +9,7 @@ import {
 } from 'react';
 
 import type { AgendaItem, Meeting, User } from '../types';
+import type { CreateMeetingParticipantInput } from './api';
 import * as meetingsApi from './api';
 
 interface CreateMeetingInput {
@@ -16,7 +17,7 @@ interface CreateMeetingInput {
   description?: string;
   startTime: Date;
   endTime: Date;
-  participants: User[];
+  participants: CreateMeetingParticipantInput[];
   agenda: Array<Pick<AgendaItem, 'title' | 'duration'>>;
   organizer: User;
 }

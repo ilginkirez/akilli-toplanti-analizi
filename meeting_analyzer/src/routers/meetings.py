@@ -142,6 +142,8 @@ def _build_meeting_participants(meeting: Dict[str, Any], session: Optional[Dict[
         seen_keys.add(normalized)
         participants.append(
             {
+                "user_id": base.get("user_id"),
+                "participant_type": base.get("participant_type") or "external_guest",
                 "name": base.get("name") or "Unknown",
                 "email": base.get("email"),
                 "role": base.get("role") or "member",
@@ -170,6 +172,8 @@ def _build_meeting_participants(meeting: Dict[str, Any], session: Optional[Dict[
             continue
         participants.append(
             {
+                "user_id": None,
+                "participant_type": "external_guest",
                 "name": runtime.get("display_name") or "Unknown",
                 "email": None,
                 "role": "member",

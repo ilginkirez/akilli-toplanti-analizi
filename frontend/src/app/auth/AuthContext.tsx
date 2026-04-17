@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -7,135 +8,114 @@ import {
   type ReactNode,
 } from 'react';
 
-import { mockUsers } from '../data/mockData';
+import * as authApi from './api';
+import { loadStoredAuthSession, saveStoredAuthSession, type StoredAuthSession } from './storage';
 import type { User } from '../types';
 
-const AUTH_STORAGE_KEY = 'meetingai.auth.user';
 
 export type AuthUser = User;
 
 interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+interface RegisterPayload {
   name: string;
   email: string;
+  password: string;
+  department?: string;
+  companyCode?: string;
+  companyName?: string;
 }
 
 interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
-  login: (payload: LoginPayload) => AuthUser;
+  isLoading: boolean;
+  login: (payload: LoginPayload) => Promise<AuthUser>;
+  register: (payload: RegisterPayload) => Promise<AuthUser>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-function sanitizeStoredUser(value: unknown): AuthUser | null {
-  if (!value || typeof value !== 'object') {
-    return null;
-  }
-
-  const user = value as Partial<AuthUser>;
-  if (
-    typeof user.id !== 'string' ||
-    typeof user.name !== 'string' ||
-    typeof user.email !== 'string' ||
-    typeof user.role !== 'string' ||
-    typeof user.department !== 'string'
-  ) {
-    return null;
-  }
-
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    avatar: typeof user.avatar === 'string' ? user.avatar : undefined,
-    role:
-      user.role === 'admin' || user.role === 'manager' || user.role === 'member'
-        ? user.role
-        : 'member',
-    department: user.department,
-  };
-}
-
-function loadStoredUser() {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  try {
-    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!raw) {
-      return null;
-    }
-
-    return sanitizeStoredUser(JSON.parse(raw));
-  } catch {
-    return null;
-  }
-}
-
-function resolveAuthUser(payload: LoginPayload) {
-  const normalizedEmail = payload.email.trim().toLowerCase();
-  const normalizedName = payload.name.trim().toLowerCase();
-
-  const matchedUser =
-    mockUsers.find((user) => user.email.toLowerCase() === normalizedEmail) ??
-    mockUsers.find((user) => user.name.toLowerCase() === normalizedName);
-
-  if (matchedUser) {
-    return {
-      ...matchedUser,
-      name: payload.name.trim() || matchedUser.name,
-      email: payload.email.trim() || matchedUser.email,
-    } satisfies AuthUser;
-  }
-
-  return {
-    id:
-      typeof crypto !== 'undefined' && 'randomUUID' in crypto
-        ? `auth-${crypto.randomUUID()}`
-        : `auth-${Date.now()}`,
-    name: payload.name.trim(),
-    email: payload.email.trim(),
-    role: 'member',
-    department: 'Genel',
-  } satisfies AuthUser;
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() => loadStoredUser());
+  const [session, setSession] = useState<StoredAuthSession | null>(() => loadStoredAuthSession());
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    saveStoredAuthSession(session);
+  }, [session]);
+
+  useEffect(() => {
+    const storedSession = loadStoredAuthSession();
+    if (!storedSession?.token) {
+      setIsLoading(false);
       return;
     }
 
-    if (!user) {
-      window.localStorage.removeItem(AUTH_STORAGE_KEY);
-      return;
-    }
+    let isMounted = true;
+    void authApi
+      .me()
+      .then((user) => {
+        if (!isMounted) {
+          return;
+        }
+        setSession({
+          token: storedSession.token,
+          user,
+        });
+      })
+      .catch(() => {
+        if (!isMounted) {
+          return;
+        }
+        setSession(null);
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
 
-    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-  }, [user]);
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const login = useCallback(async (payload: LoginPayload) => {
+    const nextSession = await authApi.login(payload);
+    setSession(nextSession);
+    return nextSession.user;
+  }, []);
+
+  const register = useCallback(async (payload: RegisterPayload) => {
+    const nextSession = await authApi.register(payload);
+    setSession(nextSession);
+    return nextSession.user;
+  }, []);
+
+  const logout = useCallback(() => {
+    setSession(null);
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      user,
-      isAuthenticated: Boolean(user),
-      login: (payload) => {
-        const nextUser = resolveAuthUser(payload);
-        setUser(nextUser);
-        return nextUser;
-      },
-      logout: () => {
-        setUser(null);
-      },
+      user: session?.user ?? null,
+      isAuthenticated: Boolean(session?.token && session?.user),
+      isLoading,
+      login,
+      register,
+      logout,
     }),
-    [user],
+    [isLoading, login, logout, register, session],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+
 
 export function useAuth() {
   const context = useContext(AuthContext);
