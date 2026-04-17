@@ -19,7 +19,7 @@ import {
 
 export function Meetings() {
   const [searchQuery, setSearchQuery] = useState('');
-  const { meetings } = useMeetings();
+  const { meetings, isLoading, error } = useMeetings();
 
   const upcomingMeetings = meetings
     .filter((meeting) => meeting.status === 'upcoming')
@@ -72,7 +72,7 @@ export function Meetings() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Users className="h-4 w-4" />
-                  {meeting.participants.length} katilimci
+                  {meeting.participants.length} katılımcı
                 </span>
               </div>
 
@@ -92,7 +92,7 @@ export function Meetings() {
 
               {meeting.agenda.length > 0 && (
                 <div className="mt-3 border-t border-gray-200 pt-3 dark:border-gray-800">
-                  <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">Gundem</p>
+                  <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">Gündem</p>
                   <div className="flex flex-wrap gap-2">
                     {meeting.agenda.slice(0, 3).map((item) => (
                       <Badge key={item.id} variant="outline" className="text-xs">
@@ -119,16 +119,16 @@ export function Meetings() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-3xl font-bold text-transparent dark:from-white dark:to-gray-300">
-            Toplantilar
+            Toplantılar
           </h1>
           <p className="mt-1 text-gray-600 dark:text-gray-400">
-            Tum toplantilarinizi yonetin, inceleyin ve odaya gecin.
+            Tüm toplantılarınızı yönetin, inceleyin ve odaya geçin.
           </p>
         </div>
         <Link to="/meetings/new">
           <Button className="bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg shadow-blue-500/20 hover:from-blue-600 hover:to-purple-700">
             <Plus className="mr-2 h-4 w-4" />
-            Yeni Toplanti
+            Yeni Toplantı
           </Button>
         </Link>
       </div>
@@ -140,7 +140,7 @@ export function Meetings() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
                 type="search"
-                placeholder="Toplanti ara..."
+                placeholder="Toplantı ara..."
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 className="pl-10"
@@ -156,24 +156,40 @@ export function Meetings() {
 
       <Tabs defaultValue="upcoming" className="w-full">
         <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="upcoming">Yaklasan ({upcomingMeetings.length})</TabsTrigger>
+          <TabsTrigger value="upcoming">Yaklaşan ({upcomingMeetings.length})</TabsTrigger>
           <TabsTrigger value="completed">Tamamlanan ({completedMeetings.length})</TabsTrigger>
-          <TabsTrigger value="all">Tumu ({allMeetings.length})</TabsTrigger>
+          <TabsTrigger value="all">Tümü ({allMeetings.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="upcoming" className="mt-6 space-y-4">
-          {filterMeetings(upcomingMeetings).length === 0 ? (
+          {isLoading ? (
+            <Card className="border-gray-200 dark:border-gray-800">
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                <Calendar className="mb-4 h-16 w-16 animate-pulse text-gray-400" />
+                <h3 className="mb-2 text-lg font-semibold">Toplantilar yukleniyor</h3>
+                <p className="text-gray-600 dark:text-gray-400">Gercek toplanti verileri getiriliyor.</p>
+              </CardContent>
+            </Card>
+          ) : error ? (
             <Card className="border-gray-200 dark:border-gray-800">
               <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                 <Calendar className="mb-4 h-16 w-16 text-gray-400" />
-                <h3 className="mb-2 text-lg font-semibold">Yaklasan toplanti yok</h3>
+                <h3 className="mb-2 text-lg font-semibold">Toplantilar yuklenemedi</h3>
+                <p className="text-gray-600 dark:text-gray-400">{error}</p>
+              </CardContent>
+            </Card>
+          ) : filterMeetings(upcomingMeetings).length === 0 ? (
+            <Card className="border-gray-200 dark:border-gray-800">
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                <Calendar className="mb-4 h-16 w-16 text-gray-400" />
+                <h3 className="mb-2 text-lg font-semibold">Yaklaşan toplantı yok</h3>
                 <p className="mb-4 text-gray-600 dark:text-gray-400">
-                  Yeni bir toplanti olusturarak baslayin.
+                  Yeni bir toplantı oluşturarak başlayın.
                 </p>
                 <Link to="/meetings/new">
                   <Button>
                     <Plus className="mr-2 h-4 w-4" />
-                    Yeni Toplanti
+                    Yeni Toplantı
                   </Button>
                 </Link>
               </CardContent>
@@ -184,13 +200,20 @@ export function Meetings() {
         </TabsContent>
 
         <TabsContent value="completed" className="mt-6 space-y-4">
-          {filterMeetings(completedMeetings).length === 0 ? (
+          {isLoading ? (
+            <Card className="border-gray-200 dark:border-gray-800">
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                <Calendar className="mb-4 h-16 w-16 animate-pulse text-gray-400" />
+                <h3 className="mb-2 text-lg font-semibold">Toplantilar yukleniyor</h3>
+              </CardContent>
+            </Card>
+          ) : filterMeetings(completedMeetings).length === 0 ? (
             <Card className="border-gray-200 dark:border-gray-800">
               <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                 <Calendar className="mb-4 h-16 w-16 text-gray-400" />
-                <h3 className="mb-2 text-lg font-semibold">Tamamlanan toplanti yok</h3>
+                <h3 className="mb-2 text-lg font-semibold">Tamamlanan toplantı yok</h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Tamamlanan gorusmeler burada listelenecek.
+                  Tamamlanan görüşmeler burada listelenecek.
                 </p>
               </CardContent>
             </Card>

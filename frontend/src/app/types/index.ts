@@ -21,6 +21,10 @@ export interface Meeting {
   aiSummary?: AISummary;
   aiAnalytics?: MeetingAnalytics;
   recordingUrl?: string;
+  sessionId?: string | null;
+  recording?: MeetingRecording;
+  analysis?: MeetingAnalysisInfo;
+  timeline?: MeetingTimelineSegment[];
 }
 
 export interface MeetingParticipant {
@@ -44,7 +48,7 @@ export interface Transcript {
   id: string;
   meetingId: string;
   segments: SpeechSegment[];
-  fullText: string;
+  fullText?: string;
 }
 
 export interface SpeechSegment {
@@ -55,6 +59,23 @@ export interface SpeechSegment {
   endTime: number;
   sentiment?: 'positive' | 'neutral' | 'negative';
   confidence: number;
+}
+
+export interface MeetingTimelineParticipant {
+  participantId?: string;
+  displayName: string;
+}
+
+export interface MeetingTimelineSegment {
+  id: string;
+  type: 'single' | 'overlap';
+  overlap: boolean;
+  startTime: number;
+  endTime: number;
+  duration: number;
+  participants: MeetingTimelineParticipant[];
+  startAt?: string;
+  endAt?: string;
 }
 
 export interface AISummary {
@@ -81,6 +102,23 @@ export interface MeetingAnalytics {
     neutral: number;
     negative: number;
   };
+}
+
+export interface MeetingRecording {
+  status: string;
+  mode?: string;
+  startedAt?: string;
+  stoppedAt?: string;
+  readyAt?: string;
+  filesCount?: number;
+  archivePath?: string;
+}
+
+export interface MeetingAnalysisInfo {
+  status: string;
+  generatedAt?: string;
+  segmentCount: number;
+  summaryCount: number;
 }
 
 export interface Task {

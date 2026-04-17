@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -7,177 +8,105 @@ import {
   type ReactNode,
 } from 'react';
 
-import { mockMeetings, mockUsers } from '../data/mockData';
 import type { AgendaItem, Meeting, User } from '../types';
-
-const CREATED_MEETINGS_STORAGE_KEY = 'meetingai.createdMeetings';
+import * as meetingsApi from './api';
 
 interface CreateMeetingInput {
   title: string;
   description?: string;
   startTime: Date;
   endTime: Date;
-  participantIds: string[];
+  participants: User[];
   agenda: Array<Pick<AgendaItem, 'title' | 'duration'>>;
   organizer: User;
 }
 
-interface StoredCreatedMeeting {
-  id: string;
-  title: string;
-  description?: string;
-  startTime: string;
-  endTime: string;
-  organizerId: string;
-  participantIds: string[];
-  agenda: AgendaItem[];
-}
-
 interface MeetingsContextValue {
   meetings: Meeting[];
-  createMeeting: (input: CreateMeetingInput) => Meeting;
-  getMeetingById: (id: string) => Meeting | null;
+  isLoading: boolean;
+  error: string | null;
+  refreshMeetings: () => Promise<void>;
+  createMeeting: (input: CreateMeetingInput) => Promise<Meeting>;
+  fetchMeetingById: (id: string) => Promise<Meeting | null>;
+  getCachedMeetingById: (id: string) => Meeting | null;
+  setMeeting: (meeting: Meeting) => void;
 }
 
 const MeetingsContext = createContext<MeetingsContextValue | undefined>(undefined);
 
-function getUserById(userId: string) {
-  return mockUsers.find((user) => user.id === userId) ?? mockUsers[0];
-}
-
-function resolveMeetingStatus(startTime: Date, endTime: Date): Meeting['status'] {
-  const now = Date.now();
-
-  if (endTime.getTime() <= now) {
-    return 'completed';
+function upsertMeeting(list: Meeting[], nextMeeting: Meeting): Meeting[] {
+  const existingIndex = list.findIndex((meeting) => meeting.id === nextMeeting.id);
+  if (existingIndex === -1) {
+    return [nextMeeting, ...list];
   }
 
-  if (startTime.getTime() <= now && endTime.getTime() > now) {
-    return 'in-progress';
-  }
-
-  return 'upcoming';
-}
-
-function createMeetingId() {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return `m-${crypto.randomUUID().slice(0, 8)}`;
-  }
-
-  return `m-${Date.now().toString(36)}`;
-}
-
-function deserializeCreatedMeeting(record: StoredCreatedMeeting): Meeting {
-  const organizer = getUserById(record.organizerId);
-  const participantIds = Array.from(
-    new Set([organizer.id, ...record.participantIds.filter(Boolean)]),
-  );
-  const startTime = new Date(record.startTime);
-  const endTime = new Date(record.endTime);
-
-  return {
-    id: record.id,
-    title: record.title,
-    description: record.description,
-    startTime,
-    endTime,
-    status: resolveMeetingStatus(startTime, endTime),
-    organizer,
-    participants: participantIds.map((participantId) => ({
-      user: getUserById(participantId),
-      status: participantId === organizer.id ? 'accepted' : 'pending',
-    })),
-    agenda: record.agenda,
-  };
-}
-
-function serializeCreatedMeeting(meeting: Meeting): StoredCreatedMeeting {
-  return {
-    id: meeting.id,
-    title: meeting.title,
-    description: meeting.description,
-    startTime: meeting.startTime.toISOString(),
-    endTime: meeting.endTime.toISOString(),
-    organizerId: meeting.organizer.id,
-    participantIds: meeting.participants.map((participant) => participant.user.id),
-    agenda: meeting.agenda,
-  };
-}
-
-function loadCreatedMeetings() {
-  if (typeof window === 'undefined') {
-    return [] as Meeting[];
-  }
-
-  try {
-    const raw = window.localStorage.getItem(CREATED_MEETINGS_STORAGE_KEY);
-    if (!raw) {
-      return [] as Meeting[];
-    }
-
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [] as Meeting[];
-    }
-
-    return parsed
-      .filter((item): item is StoredCreatedMeeting => Boolean(item && typeof item === 'object'))
-      .map(deserializeCreatedMeeting);
-  } catch {
-    return [] as Meeting[];
-  }
+  const next = [...list];
+  next[existingIndex] = nextMeeting;
+  return next;
 }
 
 export function MeetingsProvider({ children }: { children: ReactNode }) {
-  const [createdMeetings, setCreatedMeetings] = useState<Meeting[]>(() => loadCreatedMeetings());
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refreshMeetings = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const nextMeetings = await meetingsApi.listMeetings();
+      setMeetings(nextMeetings);
+      setError(null);
+    } catch (err: any) {
+      setError(err?.message ?? 'Toplantılar yüklenemedi');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const serialized = createdMeetings.map(serializeCreatedMeeting);
-    window.localStorage.setItem(CREATED_MEETINGS_STORAGE_KEY, JSON.stringify(serialized));
-  }, [createdMeetings]);
-
-  const meetings = useMemo(
-    () => [...createdMeetings, ...mockMeetings],
-    [createdMeetings],
-  );
+    void refreshMeetings();
+  }, [refreshMeetings]);
 
   const value = useMemo<MeetingsContextValue>(
     () => ({
       meetings,
-      createMeeting: (input) => {
-        const participantIds = Array.from(
-          new Set([input.organizer.id, ...input.participantIds.filter(Boolean)]),
-        );
-        const nextMeeting: Meeting = {
-          id: createMeetingId(),
+      isLoading,
+      error,
+      refreshMeetings,
+      createMeeting: async (input) => {
+        const nextMeeting = await meetingsApi.createMeeting({
           title: input.title.trim(),
           description: input.description?.trim() || undefined,
-          startTime: input.startTime,
-          endTime: input.endTime,
-          status: resolveMeetingStatus(input.startTime, input.endTime),
+          scheduledStart: input.startTime.toISOString(),
+          scheduledEnd: input.endTime.toISOString(),
           organizer: input.organizer,
-          participants: participantIds.map((participantId) => ({
-            user: getUserById(participantId),
-            status: participantId === input.organizer.id ? 'accepted' : 'pending',
-          })),
-          agenda: input.agenda.map((item, index) => ({
-            id: `agenda-${index + 1}-${Date.now()}`,
+          participants: input.participants,
+          agenda: input.agenda.map((item) => ({
             title: item.title.trim(),
             duration: item.duration,
-            completed: false,
           })),
-        };
-
-        setCreatedMeetings((current) => [nextMeeting, ...current]);
+        });
+        setMeetings((current) => upsertMeeting(current, nextMeeting));
+        setError(null);
         return nextMeeting;
       },
-      getMeetingById: (id) => meetings.find((meeting) => meeting.id === id) ?? null,
+      fetchMeetingById: async (id) => {
+        try {
+          const meeting = await meetingsApi.getMeeting(id);
+          setMeetings((current) => upsertMeeting(current, meeting));
+          setError(null);
+          return meeting;
+        } catch (err: any) {
+          setError(err?.message ?? 'Toplantı yüklenemedi');
+          return null;
+        }
+      },
+      getCachedMeetingById: (id) => meetings.find((meeting) => meeting.id === id) ?? null,
+      setMeeting: (meeting) => {
+        setMeetings((current) => upsertMeeting(current, meeting));
+      },
     }),
-    [meetings],
+    [error, isLoading, meetings, refreshMeetings],
   );
 
   return <MeetingsContext.Provider value={value}>{children}</MeetingsContext.Provider>;

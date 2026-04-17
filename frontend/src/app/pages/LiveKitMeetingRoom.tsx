@@ -51,11 +51,11 @@ export function LiveKitMeetingRoom() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { user } = useAuth();
-  const { getMeetingById } = useMeetings();
+  const { fetchMeetingById, getCachedMeetingById } = useMeetings();
   const meetingState = useMeeting();
   const routeMeetingId = id ?? '';
-  const meeting = getMeetingById(routeMeetingId);
-  const meetingTitle = meeting?.title ?? 'Canli Toplanti';
+  const meeting = getCachedMeetingById(routeMeetingId);
+  const meetingTitle = meeting?.title ?? 'Canlı Toplantı';
 
   const [viewMode, setViewMode] = useState<ViewMode>('speaker');
   const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
@@ -75,6 +75,14 @@ export function LiveKitMeetingRoom() {
   const handleBack = () => {
     navigate(meeting ? `/meetings/${meeting.id}` : '/meetings');
   };
+
+  useEffect(() => {
+    if (meeting || !routeMeetingId) {
+      return;
+    }
+
+    void fetchMeetingById(routeMeetingId);
+  }, [fetchMeetingById, meeting, routeMeetingId]);
 
   useEffect(() => {
     return () => {
@@ -198,13 +206,13 @@ export function LiveKitMeetingRoom() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-950 px-4 text-center text-white">
         <div>
-          <p className="text-xl font-semibold">Toplanti odasi bulunamadi.</p>
+          <p className="text-xl font-semibold">Toplantı odası bulunamadı.</p>
           <button
             type="button"
             onClick={() => navigate('/meetings')}
             className="mt-4 rounded-xl bg-white px-4 py-2 font-medium text-gray-950"
           >
-            Toplantilara Don
+            Toplantılara Dön
           </button>
         </div>
       </div>
@@ -363,7 +371,7 @@ export function LiveKitMeetingRoom() {
             type="button"
             onClick={handleBack}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-gray-300 transition hover:border-white/20 hover:bg-white/5 hover:text-white"
-            aria-label="Toplanti detayina don"
+            aria-label="Toplantı detayına dön"
           >
             <ArrowLeft size={18} />
           </button>
@@ -416,7 +424,7 @@ export function LiveKitMeetingRoom() {
           <div className="flex">
             <ControlButton
               icon={meetingState.isMuted ? <MicOff size={22} className="stroke-2" /> : <Mic size={22} className="stroke-2" />}
-              label={meetingState.isMuted ? 'Sesi Ac' : 'Sessize Al'}
+              label={meetingState.isMuted ? 'Sesi Aç' : 'Sessize Al'}
               onClick={meetingState.toggleMute}
               variant={meetingState.isMuted ? 'danger' : 'default'}
             />
@@ -430,7 +438,7 @@ export function LiveKitMeetingRoom() {
           <div className="flex">
             <ControlButton
               icon={meetingState.isVideoOn ? <Video size={22} className="stroke-2" /> : <VideoOff size={22} className="stroke-2" />}
-              label={meetingState.isVideoOn ? 'Videoyu Durdur' : 'Videoyu Baslat'}
+              label={meetingState.isVideoOn ? 'Videoyu Durdur' : 'Videoyu Başlat'}
               onClick={meetingState.toggleVideo}
             />
             <button className="h-full rounded-r-xl px-1 text-gray-500 transition-colors hover:bg-gray-800 hover:text-gray-300">
@@ -443,20 +451,20 @@ export function LiveKitMeetingRoom() {
           <div className="flex gap-1 sm:hidden">
             <ControlButton
               icon={meetingState.isMuted ? <MicOff size={22} /> : <Mic size={22} />}
-              label={meetingState.isMuted ? 'Sesi Ac' : 'Sessize Al'}
+              label={meetingState.isMuted ? 'Sesi Aç' : 'Sessize Al'}
               onClick={meetingState.toggleMute}
               variant={meetingState.isMuted ? 'danger' : 'default'}
             />
             <ControlButton
               icon={meetingState.isVideoOn ? <Video size={22} /> : <VideoOff size={22} />}
-              label={meetingState.isVideoOn ? 'Videoyu Durdur' : 'Videoyu Baslat'}
+              label={meetingState.isVideoOn ? 'Videoyu Durdur' : 'Videoyu Başlat'}
               onClick={meetingState.toggleVideo}
             />
           </div>
 
           <ControlButton
             icon={<Users size={20} />}
-            label="Katilimcilar"
+            label="Katılımcılar"
             onClick={() => {
               setIsParticipantsOpen((current) => !current);
               if (isChatOpen) {
@@ -476,10 +484,10 @@ export function LiveKitMeetingRoom() {
             }}
             isActive={isChatOpen}
           />
-          <ControlButton icon={<Share2 size={20} />} label="Paylas" />
+          <ControlButton icon={<Share2 size={20} />} label="Paylaş" />
           <ControlButton
             icon={<Circle size={20} className={meetingState.isRecording ? 'text-red-400' : 'text-gray-400'} />}
-            label={meetingState.isRecording ? 'Kayit Acik' : 'Kayit'}
+            label={meetingState.isRecording ? 'Kayıt Açık' : 'Kayıt'}
             isActive={meetingState.isRecording}
           />
           <ControlButton icon={<Settings size={20} />} label="Ayarlar" className="hidden md:flex" />
@@ -490,7 +498,7 @@ export function LiveKitMeetingRoom() {
             onClick={handleLeaveMeeting}
             className="whitespace-nowrap rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-500/20 transition-all duration-200 hover:bg-red-600 active:bg-red-700 md:px-8"
           >
-            Ayril
+            Ayrıl
           </button>
         </div>
       </footer>

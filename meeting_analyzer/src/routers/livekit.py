@@ -10,6 +10,7 @@ from ..services.egress_recording_service import (
     stop_participant_egress,
     stop_session_egresses,
 )
+from ..services.meeting_store import meeting_store
 from ..services.session_store import _jsonify, _utc_now_iso, session_store
 
 router = APIRouter()
@@ -189,6 +190,8 @@ async def livekit_webhook(
         session["status"] = "ended"
         session["finalized_at"] = _utc_now_iso()
         session_store.save_session(room_name, session)
+        if session.get("meeting_id"):
+            meeting_store.update_status(session["meeting_id"], "completed")
         await maybe_finalize_session_recording(room_name)
 
     return {"status": "ok"}

@@ -13,6 +13,7 @@ import { Textarea } from '../components/ui/textarea';
 import { useAuth } from '../auth/AuthContext';
 import { mockUsers } from '../data/mockData';
 import { useMeetings } from '../meetings/MeetingsContext';
+import type { User } from '../types';
 import { getInitials } from '../utils/helpers';
 
 export function CreateMeeting() {
@@ -29,6 +30,9 @@ export function CreateMeeting() {
   const [agendaItems, setAgendaItems] = useState<Array<{ id: string; title: string; duration: number }>>([]);
   const [newAgendaItem, setNewAgendaItem] = useState('');
   const [newAgendaDuration, setNewAgendaDuration] = useState('30');
+
+  const availableParticipants = mockUsers.filter((candidate) => !selectedParticipants.includes(candidate.id));
+  const selectedUsers = mockUsers.filter((candidate) => selectedParticipants.includes(candidate.id));
 
   const handleAddParticipant = (userId: string) => {
     if (!selectedParticipants.includes(userId)) {
@@ -61,7 +65,7 @@ export function CreateMeeting() {
     setAgendaItems((current) => current.filter((item) => item.id !== id));
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!title || !date || !startTime || !endTime) {
@@ -87,28 +91,38 @@ export function CreateMeeting() {
       return;
     }
 
-    const meeting = createMeeting({
-      title,
-      description,
-      startTime: startDateTime,
-      endTime: endDateTime,
-      participantIds: selectedParticipants,
-      agenda: agendaItems.map((item) => ({
-        title: item.title,
-        duration: item.duration,
-      })),
-      organizer: user ?? mockUsers[0],
-    });
+    try {
+      const organizer = user ?? mockUsers[0];
+      const participants: User[] = Array.from(
+        new Map(
+          [organizer, ...selectedUsers].map((participant) => [participant.email.toLowerCase(), participant]),
+        ).values(),
+      );
 
-    toast.success('Toplanti basariyla olusturuldu', {
-      description: 'Detay sayfasina yonlendiriliyorsunuz.',
-    });
+      const meeting = await createMeeting({
+        title,
+        description,
+        startTime: startDateTime,
+        endTime: endDateTime,
+        participants,
+        agenda: agendaItems.map((item) => ({
+          title: item.title,
+          duration: item.duration,
+        })),
+        organizer,
+      });
 
-    navigate(`/meetings/${meeting.id}`);
+      toast.success('Toplanti basariyla olusturuldu', {
+        description: 'Detay sayfasina yonlendiriliyorsunuz.',
+      });
+
+      navigate(`/meetings/${meeting.id}`);
+    } catch (error: any) {
+      toast.error('Toplanti olusturulamadi', {
+        description: error?.message ?? 'Backend istegi basarisiz oldu.',
+      });
+    }
   };
-
-  const availableParticipants = mockUsers.filter((candidate) => !selectedParticipants.includes(candidate.id));
-  const selectedUsers = mockUsers.filter((candidate) => selectedParticipants.includes(candidate.id));
 
   return (
     <div className="max-w-5xl space-y-6">

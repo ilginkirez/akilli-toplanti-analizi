@@ -12,6 +12,7 @@ import {
 } from 'livekit-client';
 
 import * as api from '../services/api';
+import { startMeetingSession } from '../../meetings/api';
 
 export interface Participant {
   id: string;
@@ -218,7 +219,7 @@ export function useMeeting() {
       connectionState: room.state,
       connectionMessage:
         room.state === ConnectionState.Reconnecting || room.state === ConnectionState.SignalReconnecting
-          ? 'Baglanti yeniden kuruluyor...'
+          ? 'Bağlantı yeniden kuruluyor...'
           : null,
     }));
   }, []);
@@ -473,13 +474,13 @@ export function useMeeting() {
   }, [cleanupRoom, stopAndUploadLocalAudioRecording]);
 
   const joinMeeting = useCallback(
-    async (sessionIdStr: string, participantName: string) => {
+    async (meetingId: string, participantName: string) => {
       setState((current) => ({
         ...current,
         status: 'joining',
         error: null,
         connectionState: ConnectionState.Connecting,
-        connectionMessage: 'LiveKit baglantisi hazirlaniyor...',
+        connectionMessage: 'LiveKit bağlantısı hazırlanıyor...',
       }));
 
       const room = new Room({
@@ -549,14 +550,14 @@ export function useMeeting() {
           setState((current) => ({
             ...current,
             connectionState: ConnectionState.Reconnecting,
-            connectionMessage: 'Medya baglantisi yeniden kuruluyor...',
+            connectionMessage: 'Medya bağlantısı yeniden kuruluyor...',
           }));
         })
         .on(RoomEvent.SignalReconnecting, () => {
           setState((current) => ({
             ...current,
             connectionState: ConnectionState.SignalReconnecting,
-            connectionMessage: 'Sinyallesme baglantisi yeniden kuruluyor...',
+            connectionMessage: 'Sinyalleşme bağlantısı yeniden kuruluyor...',
           }));
         })
         .on(RoomEvent.Reconnected, () => {
@@ -581,15 +582,16 @@ export function useMeeting() {
             remoteParticipants: [],
             connectionState: ConnectionState.Disconnected,
             connectionMessage: null,
-            error: `LiveKit baglantisi kapandi${reason ? `: ${String(reason)}` : ''}`,
+            error: `LiveKit bağlantısı kapandı${reason ? `: ${String(reason)}` : ''}`,
           }));
         });
 
       try {
+        const meetingSession = await startMeetingSession(meetingId);
         const response = await api.request<api.JoinTokenResponse>('/api/sessions/token', {
           method: 'POST',
           body: JSON.stringify({
-            session_id: sessionIdStr,
+            session_id: meetingSession.session_id,
             display_name: participantName,
             device_info: getDeviceInfo(),
           }),
@@ -654,7 +656,7 @@ export function useMeeting() {
         setState((current) => ({
           ...current,
           status: 'idle',
-          error: error.message || 'Toplantiya katilinamadi (LiveKit baglanti hatasi)',
+          error: error.message || 'Toplantıya katılınamadı (LiveKit bağlantı hatası)',
           connectionState: ConnectionState.Disconnected,
           connectionMessage: null,
         }));

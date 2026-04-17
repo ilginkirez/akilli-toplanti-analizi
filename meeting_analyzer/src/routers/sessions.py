@@ -12,6 +12,7 @@ from ..services.egress_recording_service import (
     stop_session_egresses,
 )
 from ..services import livekit_service
+from ..services.meeting_store import meeting_store
 from ..services.speech_analysis_service import speech_analysis_service
 from ..services.session_store import session_store
 
@@ -175,6 +176,8 @@ async def stop_session(session_id: str):
     session["status"] = "ended"
     session["finalized_at"] = datetime.datetime.now(datetime.UTC).isoformat()
     session_store.save_session(session_id, session)
+    if session.get("meeting_id"):
+        meeting_store.update_status(session["meeting_id"], "completed")
 
     has_tracks = any(
         participant.get("recording_files")

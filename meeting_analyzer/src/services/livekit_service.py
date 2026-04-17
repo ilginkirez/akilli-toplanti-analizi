@@ -1,9 +1,17 @@
+from __future__ import annotations
+
 import json
 import os
 from typing import Any, Dict, Iterable, Optional
 
-from google.protobuf.json_format import MessageToDict
-from livekit import api
+try:
+    from google.protobuf.json_format import MessageToDict
+    from livekit import api
+    LIVEKIT_IMPORT_ERROR: ModuleNotFoundError | None = None
+except ModuleNotFoundError as exc:
+    MessageToDict = None
+    api = None
+    LIVEKIT_IMPORT_ERROR = exc
 
 
 LIVEKIT_API_URL = os.getenv("LIVEKIT_API_URL", "http://livekit:7880").rstrip("/")
@@ -16,18 +24,34 @@ LIVEKIT_ROOM_MAX_PARTICIPANTS = int(os.getenv("LIVEKIT_ROOM_MAX_PARTICIPANTS", "
 
 
 def is_configured() -> bool:
-    return bool(LIVEKIT_API_URL and LIVEKIT_API_KEY and LIVEKIT_API_SECRET)
+    return bool(
+        api is not None
+        and LIVEKIT_API_URL
+        and LIVEKIT_API_KEY
+        and LIVEKIT_API_SECRET
+    )
 
 
 def _require_configuration() -> None:
+    if api is None:
+        raise RuntimeError(
+            "LiveKit bagimliliklari eksik. Demo modunda backend acilabilir, ancak "
+            "LiveKit ozellikleri icin eksik paketleri kurun "
+            f"(orijinal hata: {LIVEKIT_IMPORT_ERROR})."
+        )
+
     if not is_configured():
         raise RuntimeError(
-            "LiveKit yapılandırması eksik. LIVEKIT_API_URL, LIVEKIT_API_KEY ve "
-            "LIVEKIT_API_SECRET değişkenlerini tanımlayın."
+            "LiveKit yapilandirmasi eksik. LIVEKIT_API_URL, LIVEKIT_API_KEY ve "
+            "LIVEKIT_API_SECRET degiskenlerini tanimlayin."
         )
 
 
 def _proto_to_dict(message: Any) -> Dict[str, Any]:
+    if MessageToDict is None:
+        raise RuntimeError(
+            "google.protobuf kullanilamiyor. LiveKit/protobuf bagimliliklarini kurun."
+        )
     return MessageToDict(message, preserving_proto_field_name=True)
 
 
@@ -81,7 +105,7 @@ def create_access_token(
     )
 
 
-def build_webhook_receiver() -> api.WebhookReceiver:
+def build_webhook_receiver() -> Any:
     _require_configuration()
     verifier = api.TokenVerifier(
         api_key=LIVEKIT_API_KEY,
