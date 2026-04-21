@@ -77,6 +77,8 @@ def test_analyze_session_builds_speaker_timeline(tmp_path, monkeypatch):
     store.register_pending_participant(session_id, "par_bob", "merve")
     store.attach_connection(session_id, "par_bob", "con_bob")
     store.attach_stream(session_id, "con_bob", "str_bob", audio_enabled=True, video_enabled=False)
+    store.register_pending_participant(session_id, "EG_demo123", "EG_demo123")
+    store.attach_connection(session_id, "EG_demo123", "con_egress")
 
     session = store.load_session(session_id)
     session["recording"]["started_at"] = "2026-04-03T20:00:00+00:00"
@@ -123,12 +125,34 @@ def test_analyze_session_builds_speaker_timeline(tmp_path, monkeypatch):
     summary = {item["participant_id"]: item for item in result["summary"]}
     assert summary["par_alice"]["display_name"] == "ilgin"
     assert summary["par_bob"]["display_name"] == "merve"
+    assert "EG_demo123" not in summary
     assert summary["par_alice"]["total_speaking_sec"] > 0
     assert summary["par_bob"]["total_speaking_sec"] > 0
+    assert summary["par_alice"]["speaking_percentage_of_recording"] > 0
+    assert summary["par_bob"]["speaking_percentage_of_recording"] > 0
+    assert summary["par_alice"]["single_segment_count"] >= 1
+    assert summary["par_bob"]["single_segment_count"] >= 1
+
+    metrics = result["metrics"]
+    assert metrics["recording_duration_sec"] >= 2.4
+    assert metrics["active_speech_sec"] >= 1.9
+    assert metrics["silence_duration_sec"] > 0.4
+    assert metrics["overlap_duration_sec"] == 0.0
+    assert metrics["single_segment_count"] == 2
+    assert metrics["overlap_segment_count"] == 0
+
+    parameters = result["analysis_parameters"]
+    assert parameters["vad_backend"] == "energy"
+    assert parameters["sample_rate_hz"] == 16000
+    assert parameters["frame_length_ms"] == 25
+    assert parameters["hop_length_ms"] == 10
 
     saved = store.load_session(session_id)
     assert saved["speech_analysis"]["status"] == "ready"
     assert saved["speech_analysis"]["segments"] == result["segments"]
+    assert all(item["participant_id"] != "EG_demo123" for item in saved["speech_analysis"]["summary"])
 
     payload = json.loads((recordings_root / session_id / "analysis" / "speech_segments.json").read_text())
     assert payload["segments"] == result["segments"]
+    assert payload["metrics"] == result["metrics"]
+    assert payload["analysis_parameters"] == result["analysis_parameters"]

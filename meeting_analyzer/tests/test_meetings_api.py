@@ -112,6 +112,12 @@ def test_create_list_detail_and_analysis_flow(tmp_path, monkeypatch):
             "join_time": "2026-04-17T09:01:00+00:00",
             "leave_time": "2026-04-17T09:58:00+00:00",
         },
+        {
+            "participant_id": "EG_demo123",
+            "display_name": "EG_demo123",
+            "join_time": "2026-04-17T09:00:00+00:00",
+            "leave_time": "2026-04-17T10:00:00+00:00",
+        },
     ]
     session["recording"]["status"] = "uploaded"
     session["speech_analysis"] = {
@@ -136,7 +142,15 @@ def test_create_list_detail_and_analysis_flow(tmp_path, monkeypatch):
                 "total_speaking_sec": 8.5,
                 "first_spoken_sec": 0.0,
                 "last_spoken_sec": 8.5,
-            }
+            },
+            {
+                "participant_id": "EG_demo123",
+                "display_name": "EG_demo123",
+                "segment_count": 0,
+                "total_speaking_sec": 0.0,
+                "first_spoken_sec": None,
+                "last_spoken_sec": None,
+            },
         ],
         "metrics": {
             "recording_duration_sec": 12.0,
@@ -234,6 +248,7 @@ def test_create_list_detail_and_analysis_flow(tmp_path, monkeypatch):
     assert detail["analysis"]["status"] == "ready"
     assert detail["analysis"]["ai_status"] == "ready"
     assert detail["analysis"]["transcript_available"] is True
+    assert [item["name"] for item in detail["participants"]] == ["Ahmet Yilmaz", "Ayse Kaya"]
 
     analysis_response = client.get(f"/api/meetings/{meeting_id}/analysis")
     assert analysis_response.status_code == 200
@@ -246,6 +261,10 @@ def test_create_list_detail_and_analysis_flow(tmp_path, monkeypatch):
     assert analysis["summary"]["actionItems"][0]["title"] == "Roadmap onayini paylas"
     assert analysis["timeline"][0]["participants"][0]["display_name"] == "Ahmet Yilmaz"
     assert analysis["analytics"]["speaking_distribution"][0]["percentage"] == 100.0
+    assert len(analysis["speaking_summary"]) == 1
+    assert analysis["speaking_summary"][0]["participant_id"] == "par_1"
+    assert analysis["analytics"]["total_participants"] == 2
+    assert analysis["analytics"]["average_attendance"] == 100.0
     assert analysis["metrics"]["active_speech_sec"] == 8.5
     assert analysis["analytics"]["silence_duration_sec"] == 3.5
     assert analysis["analysis_parameters"]["frame_length_ms"] == 25

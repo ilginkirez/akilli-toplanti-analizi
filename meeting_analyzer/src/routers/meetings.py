@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from ..services import livekit_service
 from ..services.meeting_store import meeting_store
+from ..services.participant_identity import is_system_participant, is_system_participant_id
 from ..services.session_store import session_store
 
 router = APIRouter()
@@ -28,6 +29,32 @@ def _utc_now() -> datetime:
 
 def _normalize_key(value: Optional[str]) -> str:
     return (value or "").strip().lower()
+
+
+def _is_human_summary_item(item: Dict[str, Any]) -> bool:
+    if is_system_participant_id(item.get("participant_id")):
+        return False
+    return not is_system_participant({"display_name": item.get("display_name")})
+
+
+def _human_session_participants(session: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    if not session:
+        return []
+    return [
+        participant
+        for participant in session.get("participants", [])
+        if not is_system_participant(participant)
+    ]
+
+
+def _human_speech_summary(session: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    if not session:
+        return []
+    return [
+        item
+        for item in (session.get("speech_analysis", {}).get("summary") or [])
+        if _is_human_summary_item(item)
+    ]
 
 
 def _resolve_status(meeting: Dict[str, Any], session: Optional[Dict[str, Any]] = None) -> str:
@@ -76,11 +103,12 @@ def _compute_analysis_summary(session: Optional[Dict[str, Any]]) -> Dict[str, An
     analysis = (session or {}).get("speech_analysis", {})
     metrics = analysis.get("metrics") or {}
     ai_analysis = (session or {}).get("ai_analysis", {})
+    summary = _human_speech_summary(session)
     return {
         "status": analysis.get("status") or "pending",
         "generated_at": analysis.get("generated_at"),
         "segment_count": len(analysis.get("segments") or []),
-        "summary_count": len(analysis.get("summary") or []),
+        "summary_count": len(summary),
         "active_speech_sec": metrics.get("active_speech_sec"),
         "overlap_duration_sec": metrics.get("overlap_duration_sec"),
         "silence_duration_sec": metrics.get("silence_duration_sec"),
@@ -117,14 +145,14 @@ def _participant_runtime_map(session: Optional[Dict[str, Any]]) -> Dict[str, Dic
     if not session:
         return runtime
 
-    analysis_summary = session.get("speech_analysis", {}).get("summary") or []
+    analysis_summary = _human_speech_summary(session)
     speech_by_name = {
         _normalize_key(item.get("display_name")): item
         for item in analysis_summary
         if _normalize_key(item.get("display_name"))
     }
 
-    for participant in session.get("participants", []):
+    for participant in _human_session_participants(session):
         name = participant.get("display_name") or participant.get("participant_id")
         normalized = _normalize_key(name)
         if not normalized:
@@ -321,11 +349,11 @@ def _serialize_meeting_analysis(meeting: Dict[str, Any]) -> Dict[str, Any]:
     metrics = analysis.get("metrics") or {}
     analysis_parameters = analysis.get("analysis_parameters") or {}
     recording = (session or {}).get("recording", {})
-    summary = analysis.get("summary") or []
+    summary = _human_speech_summary(session)
     total_speaking_sec = sum(float(item.get("total_speaking_sec") or 0.0) for item in summary)
     speaking_summary = [_build_summary_item(item, total_speaking_sec) for item in summary]
     joined_participants = len(
-        [item for item in (session or {}).get("participants", []) if item.get("join_time")]
+        [item for item in _human_session_participants(session) if item.get("join_time")]
     )
     meeting_participants = _build_meeting_participants(meeting, session)
     participant_total = len(meeting_participants)

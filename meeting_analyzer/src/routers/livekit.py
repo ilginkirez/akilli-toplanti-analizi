@@ -11,6 +11,7 @@ from ..services.egress_recording_service import (
     stop_session_egresses,
 )
 from ..services.meeting_store import meeting_store
+from ..services.participant_identity import is_system_participant_id
 from ..services.session_store import _jsonify, _utc_now_iso, session_store
 
 router = APIRouter()
@@ -121,13 +122,14 @@ async def livekit_webhook(
     participant = event.participant
     track = event.track
     track_payload = payload.get("track", {}) if isinstance(payload.get("track"), dict) else {}
+    participant_is_system = bool(participant and is_system_participant_id(participant.identity))
 
     if event_name == "room_started":
         session = session_store.load_session(room_name)
         session["status"] = "active"
         session_store.save_session(room_name, session)
 
-    elif event_name == "participant_joined" and participant:
+    elif event_name == "participant_joined" and participant and not participant_is_system:
         metadata = _parse_metadata(participant.metadata)
         session_store.attach_connection(
             session_id=room_name,
@@ -138,7 +140,7 @@ async def livekit_webhook(
             connected_at=_utc_now_iso(),
         )
 
-    elif event_name in {"participant_left", "participant_connection_aborted"} and participant:
+    elif event_name in {"participant_left", "participant_connection_aborted"} and participant and not participant_is_system:
         await stop_participant_egress(
             session_id=room_name,
             participant_id=participant.identity,
@@ -153,7 +155,7 @@ async def livekit_webhook(
             reason=event_name,
         )
 
-    elif event_name == "track_published" and participant and track:
+    elif event_name == "track_published" and participant and track and not participant_is_system:
         track_type = _track_kind(track_payload)
         source = str(track_payload.get("source", "")).lower()
         session_store.attach_stream(
@@ -173,7 +175,7 @@ async def livekit_webhook(
                 connection_id=participant.sid,
             )
 
-    elif event_name == "track_unpublished" and participant and track:
+    elif event_name == "track_unpublished" and participant and track and not participant_is_system:
         track_type = _track_kind(track_payload)
         source = str(track_payload.get("source", "")).lower()
         if track_type == "audio" and source in {"", "microphone"}:

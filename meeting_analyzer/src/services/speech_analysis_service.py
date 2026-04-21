@@ -11,6 +11,7 @@ import numpy as np
 from module1_vad import AudioStandardizer, MultiChannelVAD, RTTMWriter, config
 
 from .ai_analysis_service import ai_analysis_service
+from .participant_identity import is_system_participant, is_system_participant_id
 from .session_store import session_store
 
 logger = logging.getLogger("meeting_analyzer.speech_analysis")
@@ -201,6 +202,8 @@ class SpeechAnalysisService:
         tracks: List[AudioTrack] = []
 
         for participant in session.get("participants", []):
+            if is_system_participant(participant):
+                continue
             participant_id = participant.get("participant_id")
             if not participant_id:
                 continue
@@ -325,7 +328,7 @@ class SpeechAnalysisService:
         participants_by_id = {
             item.get("participant_id"): item
             for item in session.get("participants", [])
-            if item.get("participant_id")
+            if item.get("participant_id") and not is_system_participant(item)
         }
         recording_start = _parse_iso_timestamp(recording_started_at)
 
@@ -396,6 +399,8 @@ class SpeechAnalysisService:
         for participant in session.get("participants", []):
             participant_id = participant.get("participant_id")
             if not participant_id:
+                continue
+            if is_system_participant_id(participant_id):
                 continue
             totals[participant_id] = {
                 "participant_id": participant_id,

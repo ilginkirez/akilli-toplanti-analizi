@@ -8,6 +8,7 @@ from typing import Any, Optional
 
 from .ai_llm_client import DEFAULT_MODEL, LLMError, GroqLLM
 from .ai_output_models import MeetingSummaryOutput, build_meeting_summary_output
+from .participant_identity import is_system_participant
 from .ai_transcription import TranscriptionError, transcribe_audio_segments
 from .meeting_store import meeting_store
 from .session_store import session_store
@@ -366,6 +367,8 @@ class AIAnalysisService:
         sources: list[ParticipantAudioSource] = []
 
         for participant in session.get("participants", []):
+            if is_system_participant(participant):
+                continue
             participant_id = participant.get("participant_id")
             if not participant_id:
                 continue
