@@ -52,6 +52,30 @@ type StreamCacheEntry = {
   stream: MediaStream | null;
 };
 
+function isPermissionError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'NotAllowedError';
+}
+
+function isDeviceMissingError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'NotFoundError';
+}
+
+function formatJoinError(error: unknown): string {
+  if (isPermissionError(error)) {
+    return 'Mikrofon veya kamera izni reddedildi. Tarayici site ayarlarindan izin verip tekrar deneyin.';
+  }
+
+  if (isDeviceMissingError(error)) {
+    return 'Kullanilabilir mikrofon veya kamera bulunamadi. Cihaz secimlerinizi kontrol edip tekrar deneyin.';
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'Toplantiya katilinamadi (LiveKit baglanti hatasi)';
+}
+
 function parseMetadata(metadata?: string): Record<string, unknown> {
   if (!metadata) {
     return {};
@@ -161,6 +185,20 @@ async function optimizeLocalCameraTrack(room: Room) {
     await cameraTrack.prioritizePerformance();
   } catch (error) {
     console.warn('optimizeLocalCameraTrack failed', error);
+  }
+}
+
+async function enableCameraIfAvailable(room: Room) {
+  try {
+    await room.localParticipant.setCameraEnabled(true);
+    await optimizeLocalCameraTrack(room);
+  } catch (error) {
+    if (isPermissionError(error) || isDeviceMissingError(error)) {
+      console.warn('Camera unavailable, continuing audio-only', error);
+      return;
+    }
+
+    throw error;
   }
 }
 
@@ -603,8 +641,7 @@ export function useMeeting() {
         room.prepareConnection(response.ws_url, response.token);
         await room.connect(response.ws_url, response.token);
         await room.localParticipant.setMicrophoneEnabled(true);
-        await room.localParticipant.setCameraEnabled(true);
-        await optimizeLocalCameraTrack(room);
+        await enableCameraIfAvailable(room);
 
         connectionIdRef.current =
           room.localParticipant.sid || response.connection_id || response.participant_id;
@@ -657,7 +694,7 @@ export function useMeeting() {
         setState((current) => ({
           ...current,
           status: 'idle',
-          error: error.message || 'Toplantıya katılınamadı (LiveKit bağlantı hatası)',
+          error: formatJoinError(error),
           connectionState: ConnectionState.Disconnected,
           connectionMessage: null,
         }));
