@@ -34,6 +34,7 @@ interface MeetingsContextValue {
 }
 
 const MeetingsContext = createContext<MeetingsContextValue | undefined>(undefined);
+const AI_SUMMARY_PREFETCH_LIMIT = 4;
 
 function upsertMeeting(list: Meeting[], nextMeeting: Meeting): Meeting[] {
   const existingIndex = list.findIndex((meeting) => meeting.id === nextMeeting.id);
@@ -51,18 +52,67 @@ export function MeetingsProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const hydrateMeetingsWithAnalysis = useCallback(async (items: Meeting[]) => {
+    const candidates = [...items]
+      .filter(
+        (meeting) =>
+          meeting.status === 'completed' &&
+          meeting.sessionId &&
+          meeting.analysis?.aiStatus === 'ready' &&
+          !meeting.aiSummary,
+      )
+      .sort((left, right) => right.startTime.getTime() - left.startTime.getTime())
+      .slice(0, AI_SUMMARY_PREFETCH_LIMIT);
+
+    if (candidates.length === 0) {
+      return items;
+    }
+
+    const results = await Promise.allSettled(
+      candidates.map(async (meeting) => ({
+        meetingId: meeting.id,
+        merged: meetingsApi.mergeMeetingAnalysis(
+          meeting,
+          await meetingsApi.getMeetingAnalysis(meeting.id),
+        ),
+      })),
+    );
+
+    const mergedById = new Map<string, Meeting>();
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        mergedById.set(result.value.meetingId, result.value.merged);
+      }
+    }
+
+    if (mergedById.size === 0) {
+      return items;
+    }
+
+    return items.map((meeting) => mergedById.get(meeting.id) ?? meeting);
+  }, []);
+
   const refreshMeetings = useCallback(async () => {
     setIsLoading(true);
     try {
       const nextMeetings = await meetingsApi.listMeetings();
       setMeetings(nextMeetings);
       setError(null);
+      void hydrateMeetingsWithAnalysis(nextMeetings)
+        .then((enrichedMeetings) => {
+          if (enrichedMeetings !== nextMeetings) {
+            setMeetings(enrichedMeetings);
+          }
+        })
+        .catch(() => {
+          // Listeleme ekranlarini bozmayalim; analysis detaylari arka planda yuklenebilir.
+        });
     } catch (err: any) {
       setError(err?.message ?? 'Toplantilar yuklenemedi');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [hydrateMeetingsWithAnalysis]);
 
   useEffect(() => {
     void refreshMeetings();

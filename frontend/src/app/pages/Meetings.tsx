@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { Calendar, Clock, Filter, Plus, Search, Users } from 'lucide-react';
+import { Calendar, Clock, Filter, Plus, Search, Sparkles, Users } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Badge } from '../components/ui/badge';
@@ -63,6 +63,18 @@ export function Meetings() {
                 <p className="mb-3 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
                   {meeting.description}
                 </p>
+              )}
+
+              {meeting.status === 'completed' && meeting.aiSummary?.executiveSummary && (
+                <div className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 dark:border-emerald-900/60 dark:bg-emerald-950/20">
+                  <div className="mb-1 flex items-center gap-2 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    AI Özeti
+                  </div>
+                  <p className="line-clamp-3 text-sm text-emerald-900 dark:text-emerald-100">
+                    {meeting.aiSummary.executiveSummary}
+                  </p>
+                </div>
               )}
 
               <div className="mb-3 flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
