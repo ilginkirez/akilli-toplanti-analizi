@@ -1,12 +1,15 @@
 import { request } from '../livekit-meeting/services/api';
 import type {
   AgendaItem,
+  AISummary,
   Meeting,
+  MeetingActionItem,
   MeetingAnalysisInfo,
   MeetingAnalytics,
   MeetingParticipant,
   MeetingRecording,
   MeetingTimelineSegment,
+  Transcript,
   User,
 } from '../types';
 
@@ -58,6 +61,38 @@ type ApiAnalysisInfo = {
   generated_at?: string | null;
   segment_count?: number;
   summary_count?: number;
+  ai_status?: string;
+  transcript_available?: boolean;
+};
+
+type ApiTranscriptSegment = {
+  speaker: string;
+  start: number;
+  end: number;
+  text: string;
+};
+
+type ApiTranscript = {
+  full_text?: string;
+  segments?: ApiTranscriptSegment[];
+  generated_at?: string | null;
+};
+
+type ApiSummaryActionItem = {
+  id: string;
+  title: string;
+  description?: string | null;
+  assignee_id?: string | null;
+  due_date?: string | null;
+  priority?: MeetingActionItem['priority'];
+  needs_review?: boolean;
+};
+
+type ApiSummary = {
+  executiveSummary: string;
+  keyDecisions: string[];
+  topics: string[];
+  actionItems: ApiSummaryActionItem[];
 };
 
 export type ApiMeeting = {
@@ -85,7 +120,10 @@ export type ApiMeetingAnalysis = {
   status: string;
   generated_at?: string | null;
   recording_status?: string;
+  ai_status: string;
   transcript_available: boolean;
+  transcript?: ApiTranscript | null;
+  summary?: ApiSummary | null;
   recording?: ApiRecording;
   timeline: Array<{
     segment_id: number | string;
@@ -198,6 +236,67 @@ function mapAnalysisInfo(analysis?: ApiAnalysisInfo): MeetingAnalysisInfo | unde
     generatedAt: analysis.generated_at ?? undefined,
     segmentCount: analysis.segment_count ?? 0,
     summaryCount: analysis.summary_count ?? 0,
+    aiStatus: analysis.ai_status ?? undefined,
+    transcriptAvailable: analysis.transcript_available ?? false,
+  };
+}
+
+function mapMeetingActionItem(item: ApiSummaryActionItem): MeetingActionItem {
+  return {
+    id: item.id,
+    title: item.title,
+    description: item.description ?? undefined,
+    assigneeId: item.assignee_id ?? undefined,
+    dueDate: item.due_date ?? undefined,
+    priority: item.priority ?? 'medium',
+    needsReview: item.needs_review ?? false,
+  };
+}
+
+function mapSummary(summary?: ApiSummary | null): AISummary | undefined {
+  if (!summary) {
+    return undefined;
+  }
+
+  const hasContent =
+    Boolean(summary.executiveSummary?.trim()) ||
+    (summary.keyDecisions?.length ?? 0) > 0 ||
+    (summary.topics?.length ?? 0) > 0 ||
+    (summary.actionItems?.length ?? 0) > 0;
+
+  if (!hasContent) {
+    return undefined;
+  }
+
+  return {
+    executiveSummary: summary.executiveSummary,
+    keyDecisions: summary.keyDecisions ?? [],
+    topics: summary.topics ?? [],
+    actionItems: (summary.actionItems ?? []).map(mapMeetingActionItem),
+  };
+}
+
+function mapTranscript(transcript?: ApiTranscript | null): Transcript | undefined {
+  if (!transcript) {
+    return undefined;
+  }
+
+  const segments = (transcript.segments ?? []).map((item) => ({
+    speaker: item.speaker,
+    startTime: item.start,
+    endTime: item.end,
+    text: item.text,
+  }));
+  const fullText = transcript.full_text ?? '';
+
+  if (!fullText.trim() && segments.length === 0) {
+    return undefined;
+  }
+
+  return {
+    segments,
+    fullText,
+    generatedAt: transcript.generated_at ?? undefined,
   };
 }
 
@@ -271,6 +370,9 @@ export function mergeMeetingAnalysis(meeting: Meeting, analysis: ApiMeetingAnaly
         }
       : undefined;
 
+  const aiSummary = mapSummary(analysis.summary);
+  const transcript = mapTranscript(analysis.transcript);
+
   return {
     ...meeting,
     sessionId: analysis.session_id ?? meeting.sessionId ?? null,
@@ -280,8 +382,12 @@ export function mergeMeetingAnalysis(meeting: Meeting, analysis: ApiMeetingAnaly
       generatedAt: analysis.generated_at ?? undefined,
       segmentCount: analysis.timeline.length,
       summaryCount: analysis.speaking_summary.length,
+      aiStatus: analysis.ai_status,
+      transcriptAvailable: analysis.transcript_available,
     },
+    aiSummary: aiSummary ?? meeting.aiSummary,
     aiAnalytics,
+    transcript: transcript ?? meeting.transcript,
     timeline,
   };
 }

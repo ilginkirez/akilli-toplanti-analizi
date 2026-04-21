@@ -1,11 +1,12 @@
 /**
  * AI Helper Functions
  * 
- * Bu dosya gelecekte AI entegrasyonu için placeholder fonksiyonlar içerir.
- * Production'da bu fonksiyonlar gerçek API çağrıları yapacak şekilde güncellenmelidir.
+ * Deprecated:
+ * Gercek AI entegrasyonu artik backend uzerinden /api/meetings ve /api/sessions
+ * endpoint'leriyle saglanir. Bu dosya yalnizca mock/dev fallback yardimcilari icin tutulur.
  */
 
-import type { Meeting, Task, Transcript, AISummary } from '../types';
+import type { Meeting, MeetingActionItem, Transcript, AISummary } from '../types';
 
 /**
  * Placeholder: Speech-to-Text API çağrısı
@@ -19,10 +20,9 @@ export async function transcribeAudio(audioFile: File): Promise<Transcript> {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve({
-        id: `transcript-${Date.now()}`,
-        meetingId: 'mock-meeting-id',
         segments: [],
-        fullText: 'Mock transcript text...'
+        fullText: 'Mock transcript text...',
+        generatedAt: new Date().toISOString(),
       });
     }, 2000);
   });
@@ -55,7 +55,7 @@ export async function generateMeetingSummary(transcript: string): Promise<AISumm
  * Placeholder: Task Extraction from Transcript
  * Production'da NLP modeli ile görev çıkarımı yapılmalı
  */
-export async function extractTasksFromTranscript(transcript: string, meetingId: string): Promise<Task[]> {
+export async function extractTasksFromTranscript(transcript: string, meetingId: string): Promise<MeetingActionItem[]> {
   // TODO: Implement real task extraction
   console.log('Extracting tasks from transcript for meeting:', meetingId);
   
@@ -115,9 +115,13 @@ export function calculateAgendaAdherence(meeting: Meeting, transcript: Transcrip
   // Mock calculation based on agenda items mentioned in transcript
   const agendaKeywords = meeting.agenda.map(item => 
     item.title.toLowerCase().split(' ')
-  ).flat();
+  ).flat().filter(Boolean);
+
+  if (agendaKeywords.length === 0) {
+    return 0;
+  }
   
-  const transcriptLower = transcript.fullText.toLowerCase();
+  const transcriptLower = transcript.fullText?.toLowerCase() ?? '';
   const mentionedCount = agendaKeywords.filter(keyword => 
     transcriptLower.includes(keyword)
   ).length;

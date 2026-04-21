@@ -102,8 +102,26 @@ class SessionStore:
                 "rttm_path": None,
                 "segments": [],
                 "summary": [],
+                "metrics": {},
+                "analysis_parameters": {},
                 "source_tracks": [],
                 "error": None,
+            },
+            "ai_analysis": {
+                "status": "pending",
+                "generated_at": None,
+                "provider": "groq",
+                "model": None,
+                "transcript_path": None,
+                "transcript_segment_count": 0,
+                "transcript_char_count": 0,
+                "summary_path": None,
+                "executive_summary": "",
+                "key_decisions": [],
+                "topics": [],
+                "action_items": [],
+                "error": None,
+                "completed": [],
             },
             "webhook": {
                 "events_received": 0,
@@ -423,6 +441,15 @@ class SessionStore:
     ) -> Dict[str, Any]:
         session = self.load_session(session_id)
         _deep_merge(session["speech_analysis"], updates)
+        return self.save_session(session_id, session)
+
+    def update_ai_analysis(
+        self,
+        session_id: str,
+        updates: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        session = self.load_session(session_id)
+        _deep_merge(session["ai_analysis"], updates)
         return self.save_session(session_id, session)
 
     def sync_individual_recording_archive(

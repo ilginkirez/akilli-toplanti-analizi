@@ -50,10 +50,11 @@ export interface AgendaItem {
 }
 
 export interface Transcript {
-  id: string;
-  meetingId: string;
-  segments: SpeechSegment[];
+  id?: string;
+  meetingId?: string;
+  segments: MeetingTranscriptSegment[] | SpeechSegment[];
   fullText?: string;
+  generatedAt?: string;
 }
 
 export interface SpeechSegment {
@@ -64,6 +65,13 @@ export interface SpeechSegment {
   endTime: number;
   sentiment?: 'positive' | 'neutral' | 'negative';
   confidence: number;
+}
+
+export interface MeetingTranscriptSegment {
+  speaker: string;
+  startTime: number;
+  endTime: number;
+  text: string;
 }
 
 export interface MeetingTimelineParticipant {
@@ -86,10 +94,20 @@ export interface MeetingTimelineSegment {
 export interface AISummary {
   executiveSummary: string;
   keyDecisions: string[];
-  actionItems: Task[];
+  actionItems: MeetingActionItem[] | Task[];
   topics: string[];
-  sentiment: 'positive' | 'neutral' | 'negative';
-  agendaAdherence: number; // 0-100 percentage
+  sentiment?: 'positive' | 'neutral' | 'negative';
+  agendaAdherence?: number; // 0-100 percentage
+}
+
+export interface MeetingActionItem {
+  id: string;
+  title: string;
+  description?: string;
+  assigneeId?: string;
+  dueDate?: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  needsReview?: boolean;
 }
 
 export interface MeetingAnalytics {
@@ -124,6 +142,8 @@ export interface MeetingAnalysisInfo {
   generatedAt?: string;
   segmentCount: number;
   summaryCount: number;
+  aiStatus?: string;
+  transcriptAvailable?: boolean;
 }
 
 export interface Task {

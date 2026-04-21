@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -9,6 +10,7 @@ import numpy as np
 
 from module1_vad import AudioStandardizer, MultiChannelVAD, RTTMWriter, config
 
+from .ai_analysis_service import ai_analysis_service
 from .session_store import session_store
 
 logger = logging.getLogger("meeting_analyzer.speech_analysis")
@@ -67,6 +69,7 @@ class SpeechAnalysisService:
     def analyze_session(self, session_id: str) -> Dict[str, Any]:
         session = session_store.load_session(session_id)
         recording = session.get("recording", {})
+        analysis_started = time.perf_counter()
 
         session_store.update_speech_analysis(
             session_id,
@@ -88,21 +91,33 @@ class SpeechAnalysisService:
             aligned_audio = self._align_tracks(loaded_tracks)
 
             total_samples = max((len(audio) for audio in aligned_audio.values()), default=0)
+            recording_duration_sec = round(total_samples / self.sample_rate, 4) if total_samples else 0.0
             if total_samples == 0:
                 raw_segments: List[dict] = []
             else:
                 raw_segments = MultiChannelVAD(sample_rate=self.sample_rate).process(aligned_audio)
+            processing_duration_sec = round(time.perf_counter() - analysis_started, 4)
 
             analysis_dir = self.recordings_dir / session_id / "analysis"
             analysis_dir.mkdir(parents=True, exist_ok=True)
 
             recording_started_at = recording.get("started_at")
+            analysis_parameters = self._build_analysis_parameters()
             segment_entries = self._build_segment_entries(
                 raw_segments=raw_segments,
                 session=session,
                 recording_started_at=recording_started_at,
             )
-            summary = self._build_summary(segment_entries, session)
+            metrics = self._build_metrics(
+                raw_segments=raw_segments,
+                recording_duration_sec=recording_duration_sec,
+                processing_duration_sec=processing_duration_sec,
+            )
+            summary = self._build_summary(
+                segments=segment_entries,
+                session=session,
+                metrics=metrics,
+            )
 
             rttm_rel_path = None
             if raw_segments:
@@ -138,6 +153,8 @@ class SpeechAnalysisService:
                 "rttm_path": rttm_rel_path,
                 "segments": segment_entries,
                 "summary": summary,
+                "metrics": metrics,
+                "analysis_parameters": analysis_parameters,
                 "source_tracks": source_tracks,
                 "error": None,
             }
@@ -154,6 +171,13 @@ class SpeechAnalysisService:
             )
 
             session_store.update_speech_analysis(session_id, payload)
+            try:
+                ai_analysis_service.analyze_session(session_id)
+            except Exception:
+                logger.exception(
+                    "[session_id=%s] AI analizi speech analysis sonrasi basarisiz",
+                    session_id,
+                )
             logger.info(
                 "[session_id=%s] Konusma analizi tamamlandi: %d segment",
                 session_id,
@@ -362,8 +386,12 @@ class SpeechAnalysisService:
         self,
         segments: List[Dict[str, Any]],
         session: Dict[str, Any],
+        metrics: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         totals: Dict[str, Dict[str, Any]] = {}
+        metrics = metrics or {}
+        recording_duration_sec = float(metrics.get("recording_duration_sec") or 0.0)
+        active_speech_sec = float(metrics.get("active_speech_sec") or 0.0)
 
         for participant in session.get("participants", []):
             participant_id = participant.get("participant_id")
@@ -373,7 +401,10 @@ class SpeechAnalysisService:
                 "participant_id": participant_id,
                 "display_name": participant.get("display_name") or participant_id,
                 "segment_count": 0,
+                "single_segment_count": 0,
+                "overlap_segment_count": 0,
                 "total_speaking_sec": 0.0,
+                "overlap_involved_sec": 0.0,
                 "first_spoken_sec": None,
                 "last_spoken_sec": None,
             }
@@ -386,17 +417,31 @@ class SpeechAnalysisService:
                         "participant_id": participant_id,
                         "display_name": participant.get("display_name") or participant_id,
                         "segment_count": 0,
+                        "single_segment_count": 0,
+                        "overlap_segment_count": 0,
                         "total_speaking_sec": 0.0,
+                        "overlap_involved_sec": 0.0,
                         "first_spoken_sec": None,
                         "last_spoken_sec": None,
                     }
 
                 summary = totals[participant_id]
                 summary["segment_count"] += 1
+                if segment.get("overlap"):
+                    summary["overlap_segment_count"] += 1
+                else:
+                    summary["single_segment_count"] += 1
+
+                duration_sec = float(segment.get("duration_sec", 0.0))
                 summary["total_speaking_sec"] = round(
-                    summary["total_speaking_sec"] + float(segment.get("duration_sec", 0.0)),
+                    summary["total_speaking_sec"] + duration_sec,
                     4,
                 )
+                if segment.get("overlap"):
+                    summary["overlap_involved_sec"] = round(
+                        summary["overlap_involved_sec"] + duration_sec,
+                        4,
+                    )
 
                 start_sec = float(segment.get("start_sec", 0.0))
                 end_sec = float(segment.get("end_sec", 0.0))
@@ -405,7 +450,113 @@ class SpeechAnalysisService:
                 if summary["last_spoken_sec"] is None or end_sec > summary["last_spoken_sec"]:
                     summary["last_spoken_sec"] = round(end_sec, 4)
 
+        for summary in totals.values():
+            duration = float(summary.get("total_speaking_sec") or 0.0)
+            overlap_involved_sec = float(summary.get("overlap_involved_sec") or 0.0)
+            summary["speaking_percentage_of_recording"] = self._percentage(
+                duration,
+                recording_duration_sec,
+            )
+            summary["speaking_percentage_of_active_speech"] = self._percentage(
+                duration,
+                active_speech_sec,
+            )
+            summary["overlap_percentage_of_speaking"] = self._percentage(
+                overlap_involved_sec,
+                duration,
+            )
+
         return sorted(totals.values(), key=lambda item: item["display_name"])
+
+    @staticmethod
+    def _percentage(value: float, total: float) -> float:
+        if total <= 0:
+            return 0.0
+        return round((value / total) * 100.0, 2)
+
+    def _build_analysis_parameters(self) -> Dict[str, Any]:
+        return {
+            "vad_backend": "energy",
+            "sample_rate_hz": self.sample_rate,
+            "frame_length_ms": config.FRAME_LENGTH_MS,
+            "hop_length_ms": config.HOP_LENGTH_MS,
+            "adaptive_window_sec": config.ADAPTIVE_WINDOW_SECONDS,
+            "threshold_multiplier": config.ADAPTIVE_THRESHOLD_MULTIPLIER,
+            "noise_floor": config.NOISE_FLOOR,
+            "global_speech_floor": config.GLOBAL_SPEECH_FLOOR,
+            "use_spectral": True,
+            "spectral_flatness_threshold": config.SPECTRAL_FLATNESS_THRESHOLD,
+            "bleed_ratio": config.BLEED_RATIO,
+            "dominant_ratio": config.DOMINANT_RATIO,
+            "min_segment_ms": config.MIN_SEGMENT_MS,
+        }
+
+    def _build_metrics(
+        self,
+        raw_segments: List[dict],
+        recording_duration_sec: float,
+        processing_duration_sec: float,
+    ) -> Dict[str, Any]:
+        durations = [
+            max(0.0, float(segment.get("end", 0.0)) - float(segment.get("start", 0.0)))
+            for segment in raw_segments
+        ]
+        active_speech_sec = round(sum(durations), 4)
+        overlap_duration_sec = round(
+            sum(
+                max(0.0, float(segment.get("end", 0.0)) - float(segment.get("start", 0.0)))
+                for segment in raw_segments
+                if segment.get("type") == "overlap"
+            ),
+            4,
+        )
+        single_speech_sec = round(max(active_speech_sec - overlap_duration_sec, 0.0), 4)
+        silence_duration_sec = round(max(recording_duration_sec - active_speech_sec, 0.0), 4)
+        single_segment_count = sum(1 for segment in raw_segments if segment.get("type") != "overlap")
+        overlap_segment_count = sum(1 for segment in raw_segments if segment.get("type") == "overlap")
+
+        average_segment_duration_sec = round(float(np.mean(durations)), 4) if durations else 0.0
+        median_segment_duration_sec = round(float(np.median(durations)), 4) if durations else 0.0
+        segment_density_per_min = round(
+            (len(raw_segments) / (recording_duration_sec / 60.0)),
+            4,
+        ) if recording_duration_sec > 0 else 0.0
+        real_time_factor = round(
+            (processing_duration_sec / recording_duration_sec),
+            4,
+        ) if recording_duration_sec > 0 else 0.0
+        processing_speed_x = round(
+            (recording_duration_sec / processing_duration_sec),
+            4,
+        ) if processing_duration_sec > 0 else 0.0
+
+        return {
+            "recording_duration_sec": round(recording_duration_sec, 4),
+            "processing_duration_sec": round(processing_duration_sec, 4),
+            "real_time_factor": real_time_factor,
+            "processing_speed_x": processing_speed_x,
+            "active_speech_sec": active_speech_sec,
+            "active_speech_percentage": self._percentage(active_speech_sec, recording_duration_sec),
+            "single_speech_sec": single_speech_sec,
+            "single_speech_percentage": self._percentage(single_speech_sec, recording_duration_sec),
+            "overlap_duration_sec": overlap_duration_sec,
+            "overlap_percentage_of_recording": self._percentage(
+                overlap_duration_sec,
+                recording_duration_sec,
+            ),
+            "overlap_percentage_of_active_speech": self._percentage(
+                overlap_duration_sec,
+                active_speech_sec,
+            ),
+            "silence_duration_sec": silence_duration_sec,
+            "silence_percentage": self._percentage(silence_duration_sec, recording_duration_sec),
+            "segment_count": len(raw_segments),
+            "single_segment_count": single_segment_count,
+            "overlap_segment_count": overlap_segment_count,
+            "segment_density_per_min": segment_density_per_min,
+            "average_segment_duration_sec": average_segment_duration_sec,
+            "median_segment_duration_sec": median_segment_duration_sec,
+        }
 
 
 speech_analysis_service = SpeechAnalysisService()

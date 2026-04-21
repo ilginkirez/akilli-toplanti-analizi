@@ -1,3 +1,4 @@
+import json
 import sys
 from pathlib import Path
 
@@ -137,6 +138,91 @@ def test_create_list_detail_and_analysis_flow(tmp_path, monkeypatch):
                 "last_spoken_sec": 8.5,
             }
         ],
+        "metrics": {
+            "recording_duration_sec": 12.0,
+            "active_speech_sec": 8.5,
+            "active_speech_percentage": 70.83,
+            "overlap_duration_sec": 0.0,
+            "overlap_percentage_of_recording": 0.0,
+            "overlap_percentage_of_active_speech": 0.0,
+            "silence_duration_sec": 3.5,
+            "silence_percentage": 29.17,
+            "average_segment_duration_sec": 8.5,
+            "median_segment_duration_sec": 8.5,
+        },
+        "analysis_parameters": {
+            "vad_backend": "energy",
+            "sample_rate_hz": 16000,
+            "frame_length_ms": 25,
+            "hop_length_ms": 10,
+        },
+    }
+    transcript_dir = Path(session_store.recordings_dir) / session_id / "analysis" / "ai"
+    transcript_dir.mkdir(parents=True, exist_ok=True)
+    transcript_rel_path = f"{session_id}/analysis/ai/transcript.json"
+    summary_rel_path = f"{session_id}/analysis/ai/summary.json"
+    (Path(session_store.recordings_dir) / transcript_rel_path).write_text(
+        json.dumps(
+            {
+                "generated_at": "2026-04-17T10:02:00+00:00",
+                "full_text": "[Ahmet Yilmaz | 00:00:00 - 00:00:08]\nRoadmap netlestirildi.",
+                "segments": [
+                    {
+                        "speaker": "Ahmet Yilmaz",
+                        "start": 0.0,
+                        "end": 8.5,
+                        "text": "Roadmap netlestirildi.",
+                    }
+                ],
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    (Path(session_store.recordings_dir) / summary_rel_path).write_text(
+        json.dumps(
+            {
+                "generated_at": "2026-04-17T10:02:00+00:00",
+                "executiveSummary": "Roadmap ve riskler uzerine yonetici ozeti hazirlandi.",
+                "keyDecisions": ["Roadmap onaylandi"],
+                "topics": ["Roadmap", "Riskler"],
+                "actionItems": [
+                    {
+                        "id": "action-item-1-roadmap-onayini-paylas",
+                        "title": "Roadmap onayini paylas",
+                        "priority": "high",
+                        "needs_review": False,
+                    }
+                ],
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    session["ai_analysis"] = {
+        "status": "ready",
+        "generated_at": "2026-04-17T10:02:00+00:00",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "transcript_path": transcript_rel_path,
+        "transcript_segment_count": 1,
+        "transcript_char_count": 64,
+        "summary_path": summary_rel_path,
+        "executive_summary": "Roadmap ve riskler uzerine yonetici ozeti hazirlandi.",
+        "key_decisions": ["Roadmap onaylandi"],
+        "topics": ["Roadmap", "Riskler"],
+        "action_items": [
+            {
+                "id": "action-item-1-roadmap-onayini-paylas",
+                "title": "Roadmap onayini paylas",
+                "priority": "high",
+                "needs_review": False,
+            }
+        ],
+        "error": None,
+        "completed": ["transcription_agent", "summary_agent", "action_item_agent"],
     }
     session_store.save_session(session_id, session)
     meeting_store.update_status(meeting_id, "completed")
@@ -146,13 +232,23 @@ def test_create_list_detail_and_analysis_flow(tmp_path, monkeypatch):
     detail = detail_response.json()
     assert detail["session_id"] == session_id
     assert detail["analysis"]["status"] == "ready"
+    assert detail["analysis"]["ai_status"] == "ready"
+    assert detail["analysis"]["transcript_available"] is True
 
     analysis_response = client.get(f"/api/meetings/{meeting_id}/analysis")
     assert analysis_response.status_code == 200
     analysis = analysis_response.json()
     assert analysis["status"] == "ready"
+    assert analysis["ai_status"] == "ready"
+    assert analysis["transcript_available"] is True
+    assert analysis["transcript"]["segments"][0]["speaker"] == "Ahmet Yilmaz"
+    assert analysis["summary"]["executiveSummary"] == "Roadmap ve riskler uzerine yonetici ozeti hazirlandi."
+    assert analysis["summary"]["actionItems"][0]["title"] == "Roadmap onayini paylas"
     assert analysis["timeline"][0]["participants"][0]["display_name"] == "Ahmet Yilmaz"
     assert analysis["analytics"]["speaking_distribution"][0]["percentage"] == 100.0
+    assert analysis["metrics"]["active_speech_sec"] == 8.5
+    assert analysis["analytics"]["silence_duration_sec"] == 3.5
+    assert analysis["analysis_parameters"]["frame_length_ms"] == 25
 
 
 def test_stop_session_marks_linked_meeting_completed(tmp_path, monkeypatch):

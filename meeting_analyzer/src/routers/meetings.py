@@ -1,4 +1,6 @@
+import json
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query
@@ -72,11 +74,18 @@ def _compute_recording_summary(session: Optional[Dict[str, Any]]) -> Dict[str, A
 
 def _compute_analysis_summary(session: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     analysis = (session or {}).get("speech_analysis", {})
+    metrics = analysis.get("metrics") or {}
+    ai_analysis = (session or {}).get("ai_analysis", {})
     return {
         "status": analysis.get("status") or "pending",
         "generated_at": analysis.get("generated_at"),
         "segment_count": len(analysis.get("segments") or []),
         "summary_count": len(analysis.get("summary") or []),
+        "active_speech_sec": metrics.get("active_speech_sec"),
+        "overlap_duration_sec": metrics.get("overlap_duration_sec"),
+        "silence_duration_sec": metrics.get("silence_duration_sec"),
+        "ai_status": ai_analysis.get("status") or "pending",
+        "transcript_available": _ai_transcript_exists(session),
     }
 
 
@@ -94,6 +103,12 @@ def _build_summary_item(item: Dict[str, Any], total_speaking_sec: float) -> Dict
         "percentage": percentage,
         "first_spoken_sec": item.get("first_spoken_sec"),
         "last_spoken_sec": item.get("last_spoken_sec"),
+        "single_segment_count": item.get("single_segment_count") or 0,
+        "overlap_segment_count": item.get("overlap_segment_count") or 0,
+        "overlap_involved_sec": round(float(item.get("overlap_involved_sec") or 0.0), 4),
+        "speaking_percentage_of_recording": item.get("speaking_percentage_of_recording") or 0.0,
+        "speaking_percentage_of_active_speech": item.get("speaking_percentage_of_active_speech") or 0.0,
+        "overlap_percentage_of_speaking": item.get("overlap_percentage_of_speaking") or 0.0,
     }
 
 
@@ -223,9 +238,88 @@ def _serialize_meeting_detail(meeting: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _ai_artifact_path(relative_path: Optional[str]) -> Optional[Path]:
+    if not relative_path:
+        return None
+
+    path = Path(session_store.recordings_dir) / relative_path
+    if not path.exists():
+        return None
+    return path
+
+
+def _ai_transcript_exists(session: Optional[Dict[str, Any]]) -> bool:
+    ai_analysis = (session or {}).get("ai_analysis", {})
+    transcript_path = ai_analysis.get("transcript_path")
+    if not transcript_path:
+        return False
+    if not ai_analysis.get("transcript_char_count"):
+        return False
+    return _ai_artifact_path(transcript_path) is not None
+
+
+def _load_ai_transcript(session: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    ai_analysis = (session or {}).get("ai_analysis", {})
+    transcript_path = _ai_artifact_path(ai_analysis.get("transcript_path"))
+    if transcript_path is None:
+        return None
+
+    try:
+        payload = json.loads(transcript_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+    segments = []
+    for item in payload.get("segments") or []:
+        text = " ".join(str(item.get("text") or "").strip().split())
+        speaker = " ".join(
+            str(item.get("speaker") or item.get("display_name") or "").strip().split()
+        )
+        if not text or not speaker:
+            continue
+
+        segments.append(
+            {
+                "speaker": speaker,
+                "start": float(item.get("start") or 0.0),
+                "end": float(item.get("end") or 0.0),
+                "text": text,
+            }
+        )
+
+    full_text = str(payload.get("full_text") or "").strip()
+    if not full_text and not segments:
+        return None
+
+    return {
+        "generated_at": payload.get("generated_at"),
+        "full_text": full_text,
+        "segments": segments,
+    }
+
+
+def _serialize_ai_summary(session: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    ai_analysis = (session or {}).get("ai_analysis", {})
+    summary = {
+        "executiveSummary": ai_analysis.get("executive_summary") or "",
+        "keyDecisions": ai_analysis.get("key_decisions") or [],
+        "topics": ai_analysis.get("topics") or [],
+        "actionItems": ai_analysis.get("action_items") or [],
+    }
+
+    if ai_analysis.get("status") == "ready":
+        return summary
+    if any(summary.values()):
+        return summary
+    return None
+
+
 def _serialize_meeting_analysis(meeting: Dict[str, Any]) -> Dict[str, Any]:
     session = _load_linked_session(meeting)
     analysis = (session or {}).get("speech_analysis", {})
+    ai_analysis = (session or {}).get("ai_analysis", {})
+    metrics = analysis.get("metrics") or {}
+    analysis_parameters = analysis.get("analysis_parameters") or {}
     recording = (session or {}).get("recording", {})
     summary = analysis.get("summary") or []
     total_speaking_sec = sum(float(item.get("total_speaking_sec") or 0.0) for item in summary)
@@ -263,6 +357,9 @@ def _serialize_meeting_analysis(meeting: Dict[str, Any]) -> Dict[str, Any]:
         for item in speaking_summary
     ]
 
+    transcript_payload = _load_ai_transcript(session)
+    serialized_summary = _serialize_ai_summary(session)
+
     return {
         "meeting_id": meeting["id"],
         "session_id": meeting.get("session_id"),
@@ -270,12 +367,27 @@ def _serialize_meeting_analysis(meeting: Dict[str, Any]) -> Dict[str, Any]:
         "generated_at": analysis.get("generated_at"),
         "recording_status": recording.get("status") or "pending",
         "recording": _compute_recording_summary(session),
-        "transcript_available": False,
+        "ai_status": ai_analysis.get("status") or "pending",
+        "transcript_available": transcript_payload is not None,
+        "transcript": transcript_payload,
+        "summary": serialized_summary,
+        "metrics": metrics,
+        "analysis_parameters": analysis_parameters,
         "timeline": timeline,
         "speaking_summary": speaking_summary,
         "analytics": {
             "total_participants": participant_total,
             "average_attendance": average_attendance,
+            "recording_duration_sec": metrics.get("recording_duration_sec"),
+            "active_speech_sec": metrics.get("active_speech_sec"),
+            "active_speech_percentage": metrics.get("active_speech_percentage"),
+            "overlap_duration_sec": metrics.get("overlap_duration_sec"),
+            "overlap_percentage_of_recording": metrics.get("overlap_percentage_of_recording"),
+            "overlap_percentage_of_active_speech": metrics.get("overlap_percentage_of_active_speech"),
+            "silence_duration_sec": metrics.get("silence_duration_sec"),
+            "silence_percentage": metrics.get("silence_percentage"),
+            "average_segment_duration_sec": metrics.get("average_segment_duration_sec"),
+            "median_segment_duration_sec": metrics.get("median_segment_duration_sec"),
             "speaking_distribution": speaking_distribution,
             "engagement_score": None,
             "sentiment_breakdown": {

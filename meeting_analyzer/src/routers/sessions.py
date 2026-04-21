@@ -11,6 +11,7 @@ from ..services.egress_recording_service import (
     maybe_finalize_session_recording,
     stop_session_egresses,
 )
+from ..services.ai_analysis_service import ai_analysis_service
 from ..services import livekit_service
 from ..services.meeting_store import meeting_store
 from ..services.speech_analysis_service import speech_analysis_service
@@ -153,6 +154,21 @@ async def build_speech_analysis(session_id: str):
         return await asyncio.to_thread(
             speech_analysis_service.analyze_session,
             session_id,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/{session_id}/ai-analysis")
+async def get_ai_analysis(session_id: str):
+    return session_store.load_session(session_id).get("ai_analysis", {})
+
+
+@router.post("/{session_id}/ai-analysis")
+async def build_ai_analysis(session_id: str):
+    try:
+        return await asyncio.to_thread(
+            lambda: ai_analysis_service.analyze_session(session_id, force=True)
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

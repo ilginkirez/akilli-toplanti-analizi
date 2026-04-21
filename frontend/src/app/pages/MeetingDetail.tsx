@@ -7,6 +7,7 @@ import {
   Camera,
   CheckCircle2,
   Clock,
+  FileText,
   MessageSquare,
   Mic,
   Sparkles,
@@ -33,6 +34,8 @@ import {
   getInitials,
   getMeetingStatusColor,
   getMeetingStatusLabel,
+  getPriorityColor,
+  getPriorityLabel,
   getScoreColor,
 } from '../utils/helpers';
 
@@ -115,9 +118,42 @@ export function MeetingDetail() {
     );
   }
 
-  const { aiSummary, aiAnalytics, timeline } = meeting;
+  const { aiSummary, aiAnalytics, timeline, transcript } = meeting;
   const hasTimeline = Boolean(timeline && timeline.length > 0);
   const hasAnalytics = Boolean(aiAnalytics && aiAnalytics.speakingDistribution.length > 0);
+  const transcriptSegments = (transcript?.segments ?? []).map((segment) => ({
+    speaker: typeof segment.speaker === 'string' ? segment.speaker : segment.speaker.name,
+    startTime: segment.startTime,
+    endTime: segment.endTime,
+    text: segment.text,
+  }));
+  const hasTranscript = Boolean(transcript?.fullText?.trim() || transcriptSegments.length > 0);
+  const normalizedActionItems = (aiSummary?.actionItems ?? []).map((item) => {
+    if ('assignee' in item) {
+      return {
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        assigneeLabel: item.assignee.name,
+        dueDate: item.dueDate.toISOString(),
+        priority: item.priority,
+        needsReview: false,
+      };
+    }
+
+    return {
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      assigneeLabel: item.assigneeId
+        ? item.assigneeId.replace(/^person-/, '').replace(/-/g, ' ')
+        : undefined,
+      dueDate: item.dueDate,
+      priority: item.priority,
+      needsReview: item.needsReview ?? false,
+    };
+  });
+  const aiStatus = meeting.analysis?.aiStatus ?? 'pending';
 
   const sentimentData = aiAnalytics
     ? [
@@ -216,7 +252,7 @@ export function MeetingDetail() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full max-w-3xl grid-cols-4">
+        <TabsList className="grid w-full max-w-5xl grid-cols-5">
           <TabsTrigger value="overview">
             <MessageSquare className="mr-2 h-4 w-4" />
             Genel Bakis
@@ -232,6 +268,10 @@ export function MeetingDetail() {
           <TabsTrigger value="analytics" disabled={!hasAnalytics}>
             <BarChart3 className="mr-2 h-4 w-4" />
             Analitik
+          </TabsTrigger>
+          <TabsTrigger value="transcript" disabled={!hasTranscript}>
+            <FileText className="mr-2 h-4 w-4" />
+            Transcript
           </TabsTrigger>
         </TabsList>
 
@@ -257,10 +297,17 @@ export function MeetingDetail() {
                     Segment: {meeting.analysis?.segmentCount ?? 0} | Ozet: {meeting.analysis?.summaryCount ?? 0}
                   </p>
                 </div>
+                <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">AI Analizi</p>
+                  <p className="mt-1 text-lg font-semibold">{aiStatus}</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Transcript: {meeting.analysis?.transcriptAvailable ? 'hazir' : 'yok'}
+                  </p>
+                </div>
                 {!aiSummary && (
                   <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-400">
-                    Bu fazda yalnizca backend'in gercekten urettigi konusma ve kayit analizi gosteriliyor. LLM tabanli
-                    ozet ve karar cikarma henuz bagli degil.
+                    AI ozeti henuz hazir degil. Speech analysis tamamlanmis olsa bile AI katmani daha sonra hazir
+                    olabilir veya hata almis olabilir.
                   </div>
                 )}
               </CardContent>
@@ -277,14 +324,66 @@ export function MeetingDetail() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-sm text-gray-600 dark:text-gray-400">{aiSummary.executiveSummary}</p>
-                  <Separator />
-                  <div className="flex flex-wrap gap-2">
-                    {aiSummary.topics.map((topic, idx) => (
-                      <Badge key={idx} variant="outline">
-                        {topic}
-                      </Badge>
-                    ))}
-                  </div>
+                  {aiSummary.keyDecisions.length > 0 && (
+                    <>
+                      <Separator />
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold">Kararlar</h4>
+                        <div className="space-y-2">
+                          {aiSummary.keyDecisions.map((decision, idx) => (
+                            <div
+                              key={idx}
+                              className="rounded-lg border border-gray-200 p-3 text-sm text-gray-700 dark:border-gray-800 dark:text-gray-300"
+                            >
+                              {decision}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {aiSummary.topics.length > 0 && (
+                    <>
+                      <Separator />
+                      <div className="flex flex-wrap gap-2">
+                        {aiSummary.topics.map((topic, idx) => (
+                          <Badge key={idx} variant="outline">
+                            {topic}
+                          </Badge>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {normalizedActionItems.length > 0 && (
+                    <>
+                      <Separator />
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-semibold">Aksiyon Maddeleri</h4>
+                        {normalizedActionItems.map((item) => (
+                          <div key={item.id} className="rounded-lg border border-gray-200 p-3 dark:border-gray-800">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-sm font-semibold">{item.title}</p>
+                              <Badge className={getPriorityColor(item.priority)} variant="outline">
+                                {getPriorityLabel(item.priority)}
+                              </Badge>
+                              {item.needsReview && (
+                                <Badge variant="secondary">Review gerekli</Badge>
+                              )}
+                            </div>
+                            {item.description && (
+                              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
+                            )}
+                            {(item.assigneeLabel || item.dueDate) && (
+                              <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-500">
+                                {item.assigneeLabel && <span>Atanan: {item.assigneeLabel}</span>}
+                                {item.dueDate && <span>Tarih: {item.dueDate.slice(0, 10)}</span>}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             ) : (
@@ -507,6 +606,40 @@ export function MeetingDetail() {
               </Card>
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="transcript" className="mt-6 space-y-6">
+          <Card className="border-gray-200 dark:border-gray-800">
+            <CardHeader>
+              <CardTitle>Toplanti Transcripti</CardTitle>
+              <CardDescription>AI katmaninin kayitlardan urettigi tam transcript</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {transcript?.fullText && (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/40">
+                  <p className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">{transcript.fullText}</p>
+                </div>
+              )}
+              {transcriptSegments.length > 0 && (
+                <div className="space-y-3">
+                  {transcriptSegments.map((segment, index) => (
+                    <div key={`${segment.speaker}-${index}-${segment.startTime}`} className="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <span className="text-sm font-semibold">{segment.speaker}</span>
+                        <span className="text-xs text-gray-500">
+                          {formatDuration(Math.floor(segment.startTime))} - {formatDuration(Math.floor(segment.endTime))}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{segment.text}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {!transcript?.fullText && transcriptSegments.length === 0 && (
+                <p className="text-sm text-gray-600 dark:text-gray-400">Transcript henuz hazir degil.</p>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
