@@ -107,6 +107,7 @@ function buildParticipantModel(
   const cachedEntry = streamCache.get(cacheKey);
   let stream = cachedEntry?.stream ?? null;
 
+  // Reuse MediaStream objects unless the underlying tracks actually changed.
   if (cachedEntry?.audioTrack !== audioMediaTrack || cachedEntry?.videoTrack !== videoMediaTrack) {
     const tracks = [audioMediaTrack, videoMediaTrack].filter(
       (track): track is MediaStreamTrack => track !== null,
@@ -263,6 +264,7 @@ export function useMeeting() {
   }, []);
 
   const syncSpeakingState = useCallback((room: Room) => {
+    // Keep speaker indicators fresh without rebuilding full participant models on every event.
     setState((current) => {
       let changed = false;
       let nextLocalParticipant = current.localParticipant;
@@ -550,6 +552,7 @@ export function useMeeting() {
           return;
         }
 
+        // Throttle bursty active-speaker events to avoid noisy rerenders.
         activeSpeakerSyncTimeoutRef.current = window.setTimeout(() => {
           activeSpeakerSyncTimeoutRef.current = null;
           syncSpeakingState(room);

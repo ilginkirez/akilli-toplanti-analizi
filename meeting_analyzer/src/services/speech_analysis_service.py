@@ -72,6 +72,7 @@ class SpeechAnalysisService:
         recording = session.get("recording", {})
         analysis_started = time.perf_counter()
 
+        # Persist progress early so the API can report "processing" even if later steps fail.
         session_store.update_speech_analysis(
             session_id,
             {
@@ -89,6 +90,7 @@ class SpeechAnalysisService:
                 )
 
             loaded_tracks = self._load_tracks(tracks)
+            # Pad and place every participant track on the same timeline before VAD scans them.
             aligned_audio = self._align_tracks(loaded_tracks)
 
             total_samples = max((len(audio) for audio in aligned_audio.values()), default=0)
@@ -282,6 +284,7 @@ class SpeechAnalysisService:
         total_samples = 0
 
         for track in tracks:
+            # Honor the expected recording window so offset-based alignment stays reliable.
             expected_samples = _samples_from_ms(track.expected_duration_ms, self.sample_rate)
             audio = track.audio
             if expected_samples > len(audio):
@@ -313,6 +316,7 @@ class SpeechAnalysisService:
 
             existing = channel[start:end]
             incoming = track.audio[: end - start]
+            # Keep the stronger waveform when chunks from the same participant overlap.
             stronger = np.abs(incoming) > np.abs(existing)
             existing[stronger] = incoming[stronger]
             channel[start:end] = existing

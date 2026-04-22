@@ -138,6 +138,7 @@ class SessionStore:
             session_file = self._session_file(session_id)
             if session_file.exists():
                 data = json.loads(session_file.read_text(encoding="utf-8"))
+                # Backfill newly introduced fields without discarding the session's stored state.
                 merged = _deep_merge(self._default_session(session_id), data)
                 session_file.write_text(
                     json.dumps(merged, indent=2, ensure_ascii=False),
@@ -280,6 +281,7 @@ class SessionStore:
             participant = self._find_participant(session, participant_id)
 
         if participant is None:
+            # Events can reach us before participant registration is complete, so create a placeholder.
             inferred_name = None
             if client_data:
                 inferred_name = client_data.get("display_name")
@@ -504,6 +506,7 @@ class SessionStore:
                 matches = sorted(extract_dir.glob(f"{stream_id}*.webm"))
                 file_path = matches[0] if matches else file_path
 
+            # Recover participant ownership from the richest metadata available first.
             participant_id = None
             if isinstance(server_data, dict):
                 participant_id = server_data.get("participant_id")
