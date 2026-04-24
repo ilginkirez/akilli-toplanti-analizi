@@ -161,3 +161,150 @@ def test_ai_analysis_service_marks_failed_when_no_audio_source(tmp_path, monkeyp
     saved = store.load_session(session_id)
     assert saved["ai_analysis"]["status"] == "failed"
     assert "uygun ses kaydi" in saved["ai_analysis"]["error"]
+
+
+def test_ai_analysis_service_uses_local_speech_timeline_when_available(tmp_path, monkeypatch):
+    from src.services.meeting_store import MeetingStore
+    from src.services.session_store import SessionStore
+    import src.services.ai_analysis_service as ai_analysis_module
+
+    storage_root = tmp_path / "storage"
+    recordings_root = tmp_path / "recordings"
+    store = SessionStore(str(storage_root), str(recordings_root))
+    meetings = MeetingStore(str(tmp_path / "meetings.db"))
+
+    monkeypatch.setattr(ai_analysis_module, "session_store", store)
+    monkeypatch.setattr(ai_analysis_module, "meeting_store", meetings)
+
+    clip_calls: list[tuple[str, float, float]] = []
+
+    def fake_transcribe_clip(
+        filepath: str,
+        *,
+        start_sec: float,
+        end_sec: float,
+        language: str,
+        pad_start_sec: float,
+        pad_end_sec: float,
+    ) -> str:
+        clip_calls.append((filepath, round(start_sec, 2), round(end_sec, 2)))
+        if start_sec < 2.0:
+            return "Ayse ilk konusma bolumu."
+        return "Mehmet ikinci konusma bolumu."
+
+    monkeypatch.setattr(ai_analysis_module, "transcribe_audio_clip_text", fake_transcribe_clip)
+
+    def fail_whole_file(*args, **kwargs):
+        raise AssertionError("whole-file transcription fallback should not be used")
+
+    monkeypatch.setattr(ai_analysis_module, "transcribe_audio_segments", fail_whole_file)
+
+    session_id = "session-ai-local-timeline"
+    audio_dir = recordings_root / session_id / "individual"
+    audio_dir.mkdir(parents=True, exist_ok=True)
+    ayse_path = audio_dir / "ayse.wav"
+    mehmet_path = audio_dir / "mehmet.wav"
+    ayse_path.write_bytes(b"fake audio")
+    mehmet_path.write_bytes(b"fake audio")
+
+    session = store.ensure_session(session_id)
+    session["participants"] = [
+        {
+            "participant_id": "par_ayse",
+            "display_name": "Ayse",
+            "recording_files": [
+                {
+                    "file_path": f"{session_id}/individual/ayse.wav",
+                    "has_audio": True,
+                    "start_time_offset_ms": 0,
+                    "recorded_started_at": "2026-04-21T09:00:00+00:00",
+                    "recorded_ended_at": "2026-04-21T09:00:04+00:00",
+                }
+            ],
+        },
+        {
+            "participant_id": "par_mehmet",
+            "display_name": "Mehmet",
+            "recording_files": [
+                {
+                    "file_path": f"{session_id}/individual/mehmet.wav",
+                    "has_audio": True,
+                    "start_time_offset_ms": 0,
+                    "recorded_started_at": "2026-04-21T09:00:00+00:00",
+                    "recorded_ended_at": "2026-04-21T09:00:04+00:00",
+                }
+            ],
+        },
+    ]
+    session["speech_analysis"] = {
+        **session["speech_analysis"],
+        "status": "ready",
+        "generated_at": "2026-04-21T09:05:00+00:00",
+        "segments": [
+            {
+                "segment_id": 1,
+                "type": "single",
+                "start_sec": 0.0,
+                "end_sec": 0.8,
+                "participants": [{"participant_id": "par_ayse", "display_name": "Ayse"}],
+                "participant_id": "par_ayse",
+                "display_name": "Ayse",
+            },
+            {
+                "segment_id": 2,
+                "type": "single",
+                "start_sec": 0.95,
+                "end_sec": 1.4,
+                "participants": [{"participant_id": "par_ayse", "display_name": "Ayse"}],
+                "participant_id": "par_ayse",
+                "display_name": "Ayse",
+            },
+            {
+                "segment_id": 3,
+                "type": "single",
+                "start_sec": 2.2,
+                "end_sec": 3.0,
+                "participants": [{"participant_id": "par_mehmet", "display_name": "Mehmet"}],
+                "participant_id": "par_mehmet",
+                "display_name": "Mehmet",
+            },
+        ],
+    }
+    store.save_session(session_id, session)
+
+    service = ai_analysis_module.AIAnalysisService(
+        recordings_dir=str(recordings_root),
+        llm=FakeLLM(),
+    )
+
+    result = service.analyze_session(session_id)
+
+    assert result["status"] == "ready"
+    assert clip_calls == [
+        (str(ayse_path), 0.0, 1.4),
+        (str(mehmet_path), 2.2, 3.0),
+    ]
+
+    transcript_file = recordings_root / result["transcript_path"]
+    transcript_payload = json.loads(transcript_file.read_text(encoding="utf-8"))
+
+    assert transcript_payload["segments"] == [
+        {
+            "speaker": "Ayse",
+            "participant_id": "par_ayse",
+            "start": 0.0,
+            "end": 1.4,
+            "text": "Ayse ilk konusma bolumu.",
+            "source_segment_ids": [1, 2],
+        },
+        {
+            "speaker": "Mehmet",
+            "participant_id": "par_mehmet",
+            "start": 2.2,
+            "end": 3.0,
+            "text": "Mehmet ikinci konusma bolumu.",
+            "source_segment_ids": [3],
+        },
+    ]
+    assert "[Ayse | 00:00:00 - 00:00:01]" in transcript_payload["full_text"]
+    assert "[Mehmet | 00:00:02 - 00:00:03]" in transcript_payload["full_text"]

@@ -9,7 +9,11 @@ from typing import Any, Optional
 from .ai_llm_client import DEFAULT_MODEL, LLMError, GroqLLM
 from .ai_output_models import MeetingSummaryOutput, build_meeting_summary_output
 from .participant_identity import is_system_participant
-from .ai_transcription import TranscriptionError, transcribe_audio_segments
+from .ai_transcription import (
+    TranscriptionError,
+    transcribe_audio_clip_text,
+    transcribe_audio_segments,
+)
 from .meeting_store import meeting_store
 from .session_store import session_store
 
@@ -93,6 +97,8 @@ Beklenen JSON:
 
 VALID_PRIORITIES = {"", "low", "medium", "high", "critical"}
 VALID_ACTION_ITEM_TYPES = {"direct", "volunteer", "implicit", "conditional", "group"}
+LOCAL_SEGMENT_MERGE_GAP_SEC = 0.5
+LOCAL_TRANSCRIPTION_CLIP_PAD_SEC = 0.35
 
 
 class AIAnalysisError(Exception):
@@ -107,6 +113,15 @@ class ParticipantAudioSource:
     relative_path: str
     start_offset_sec: float
     source_index: int
+
+
+@dataclass
+class TranscriptWindow:
+    participant_id: str
+    display_name: str
+    start_sec: float
+    end_sec: float
+    source_segment_ids: list[int]
 
 
 def _utc_now_iso() -> str:
@@ -235,7 +250,7 @@ class AIAnalysisService:
             if not sources:
                 raise AIAnalysisError("AI analizi icin uygun ses kaydi bulunamadi.")
 
-            transcript_segments, full_text = self._build_transcript(sources)
+            transcript_segments, full_text = self._build_transcript(session, sources)
             if not full_text.strip():
                 raise AIAnalysisError("Anlamli transkript olusturulamadi.")
 
@@ -432,7 +447,143 @@ class AIAnalysisService:
             return None
         return max(candidates, key=lambda item: item[0])[1]
 
-    def _build_transcript(self, sources: list[ParticipantAudioSource]) -> tuple[list[dict[str, Any]], str]:
+    def _load_local_speech_segments(self, session: dict[str, Any]) -> list[dict[str, Any]]:
+        speech_analysis = session.get("speech_analysis", {})
+        segments = speech_analysis.get("segments") or []
+        if isinstance(segments, list) and segments:
+            return [item for item in segments if isinstance(item, dict)]
+
+        segments_path = speech_analysis.get("segments_path")
+        if not segments_path:
+            return []
+
+        absolute_path = self.recordings_dir / str(segments_path)
+        if not absolute_path.exists():
+            return []
+
+        try:
+            payload = json.loads(absolute_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return []
+
+        file_segments = payload.get("segments") or []
+        if not isinstance(file_segments, list):
+            return []
+        return [item for item in file_segments if isinstance(item, dict)]
+
+    def _build_transcript_windows(self, speech_segments: list[dict[str, Any]]) -> list[TranscriptWindow]:
+        windows_by_participant: dict[str, list[TranscriptWindow]] = {}
+        sorted_segments = sorted(
+            speech_segments,
+            key=lambda item: (
+                float(item.get("start_sec", 0.0)),
+                float(item.get("end_sec", 0.0)),
+                int(item.get("segment_id") or 0),
+            ),
+        )
+
+        for fallback_index, segment in enumerate(sorted_segments, start=1):
+            start_sec = round(float(segment.get("start_sec", 0.0)), 4)
+            end_sec = round(float(segment.get("end_sec", 0.0)), 4)
+            if end_sec <= start_sec:
+                continue
+
+            segment_id = int(segment.get("segment_id") or fallback_index)
+            participants = segment.get("participants") or []
+            if not participants and segment.get("participant_id"):
+                participants = [
+                    {
+                        "participant_id": segment.get("participant_id"),
+                        "display_name": segment.get("display_name") or segment.get("participant_id"),
+                    }
+                ]
+
+            for participant in participants:
+                participant_id = str(participant.get("participant_id") or "").strip()
+                if not participant_id:
+                    continue
+
+                display_name = (
+                    str(participant.get("display_name") or segment.get("display_name") or participant_id).strip()
+                    or participant_id
+                )
+                participant_windows = windows_by_participant.setdefault(participant_id, [])
+                if participant_windows:
+                    previous = participant_windows[-1]
+                    if start_sec - previous.end_sec <= LOCAL_SEGMENT_MERGE_GAP_SEC:
+                        previous.end_sec = round(max(previous.end_sec, end_sec), 4)
+                        previous.source_segment_ids.append(segment_id)
+                        continue
+
+                participant_windows.append(
+                    TranscriptWindow(
+                        participant_id=participant_id,
+                        display_name=display_name,
+                        start_sec=start_sec,
+                        end_sec=end_sec,
+                        source_segment_ids=[segment_id],
+                    )
+                )
+
+        windows: list[TranscriptWindow] = []
+        for participant_windows in windows_by_participant.values():
+            windows.extend(participant_windows)
+
+        return sorted(
+            windows,
+            key=lambda item: (item.start_sec, item.end_sec, item.display_name.casefold()),
+        )
+
+    def _build_transcript_from_local_timeline(
+        self,
+        sources: list[ParticipantAudioSource],
+        speech_segments: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], str]:
+        source_by_participant = {item.participant_id: item for item in sources}
+        windows = self._build_transcript_windows(speech_segments)
+        transcript_segments: list[dict[str, Any]] = []
+
+        for window in windows:
+            source = source_by_participant.get(window.participant_id)
+            if source is None:
+                continue
+
+            clip_start_sec = round(max(0.0, window.start_sec - source.start_offset_sec), 4)
+            clip_end_sec = round(max(0.0, window.end_sec - source.start_offset_sec), 4)
+            if clip_end_sec <= clip_start_sec:
+                continue
+
+            text = transcribe_audio_clip_text(
+                str(source.absolute_path),
+                start_sec=clip_start_sec,
+                end_sec=clip_end_sec,
+                language="tr",
+                pad_start_sec=LOCAL_TRANSCRIPTION_CLIP_PAD_SEC,
+                pad_end_sec=LOCAL_TRANSCRIPTION_CLIP_PAD_SEC,
+            ).strip()
+            if not text:
+                continue
+
+            transcript_segments.append(
+                {
+                    "speaker": window.display_name,
+                    "participant_id": window.participant_id,
+                    "start": round(window.start_sec, 4),
+                    "end": round(window.end_sec, 4),
+                    "text": text,
+                    "source_segment_ids": window.source_segment_ids,
+                }
+            )
+
+        transcript_segments.sort(
+            key=lambda item: (float(item.get("start", 0.0)), str(item.get("speaker", "")))
+        )
+        return transcript_segments, self._build_full_text(transcript_segments)
+
+    def _build_transcript_from_sources(
+        self,
+        sources: list[ParticipantAudioSource],
+    ) -> tuple[list[dict[str, Any]], str]:
         segments: list[dict[str, Any]] = []
 
         for source in sources:
@@ -448,6 +599,20 @@ class AIAnalysisService:
         segments.sort(key=lambda item: (float(item.get("start", 0.0)), str(item.get("speaker", ""))))
         transcript = self._build_full_text(segments)
         return segments, transcript
+
+    def _build_transcript(
+        self,
+        session: dict[str, Any],
+        sources: list[ParticipantAudioSource],
+    ) -> tuple[list[dict[str, Any]], str]:
+        local_speech_segments = self._load_local_speech_segments(session)
+        if local_speech_segments:
+            timeline_segments, timeline_text = self._build_transcript_from_local_timeline(
+                sources,
+                local_speech_segments,
+            )
+            return timeline_segments, timeline_text
+        return self._build_transcript_from_sources(sources)
 
     def _build_full_text(self, segments: list[dict[str, Any]]) -> str:
         lines: list[str] = []

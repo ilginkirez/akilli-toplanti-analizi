@@ -81,3 +81,90 @@ def test_transcription_retries_without_vad_when_first_pass_empty(tmp_path, monke
 
     assert calls == [True, False]
     assert items[0]["text"] == "bugun raporu bitiriyorum"
+
+
+def test_run_transcription_uses_groq_verbose_segments(monkeypatch):
+    import src.services.ai_transcription as transcription
+
+    monkeypatch.setattr(
+        transcription,
+        "_request_transcription",
+        lambda path, language: {
+            "text": "Merhaba dunya",
+            "segments": [
+                {
+                    "text": "Merhaba dunya",
+                    "start": 1.25,
+                    "end": 2.75,
+                }
+            ],
+        },
+    )
+
+    segments = transcription._run_transcription("dummy.webm", "tr")
+
+    assert segments == [
+        {
+            "text": "Merhaba dunya",
+            "start": 1.25,
+            "end": 2.75,
+        }
+    ]
+
+
+def test_run_transcription_falls_back_to_text_when_segments_missing(monkeypatch):
+    import src.services.ai_transcription as transcription
+
+    monkeypatch.setattr(
+        transcription,
+        "_request_transcription",
+        lambda path, language: {
+            "text": "Toplanti basliyor",
+            "duration": 4.2,
+            "segments": [],
+        },
+    )
+
+    segments = transcription._run_transcription("dummy.webm", "tr")
+
+    assert segments == [
+        {
+            "text": "Toplanti basliyor",
+            "start": 0.0,
+            "end": 4.2,
+        }
+    ]
+
+
+def test_transcribe_audio_text_returns_cleaned_payload_text(tmp_path, monkeypatch):
+    import src.services.ai_transcription as transcription
+
+    audio_path = tmp_path / "sample.wav"
+    audio_path.write_bytes(b"fake audio")
+
+    monkeypatch.setattr(transcription, "_preprocess_audio", lambda path: path)
+    monkeypatch.setattr(
+        transcription,
+        "_request_transcription",
+        lambda path, language: {"text": "  Merhaba   dunya  "},
+    )
+
+    text = transcription.transcribe_audio_text(str(audio_path), language="tr")
+
+    assert text == "Merhaba dunya"
+
+
+def test_transcribe_audio_clip_text_returns_empty_for_invalid_window(tmp_path):
+    import src.services.ai_transcription as transcription
+
+    audio_path = tmp_path / "sample.wav"
+    audio_path.write_bytes(b"fake audio")
+
+    text = transcription.transcribe_audio_clip_text(
+        str(audio_path),
+        start_sec=4.0,
+        end_sec=4.0,
+        language="tr",
+    )
+
+    assert text == ""
