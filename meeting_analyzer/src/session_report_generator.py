@@ -218,6 +218,94 @@ class SessionReportGenerator:
         return total_overlap
 
     @staticmethod
+    def calculate_vad_metrics(
+        hypothesis_segments: List[dict],
+        reference_segments: List[dict],
+        total_duration: float,
+        resolution_ms: int = 10,
+    ) -> Dict[str, float]:
+        """
+        Referans segmentler varsa frame-bazlı VAD metriklerini hesaplar.
+
+        Bu hesap konuşma/konuşmama ayrımı yapar; konuşmacı kimliğini dikkate
+        almaz. Böylece klasik VAD literatüründe kullanılan precision, recall,
+        F1, false alarm ve miss rate benzeri ölçütler elde edilir.
+
+        Args:
+            hypothesis_segments : Sistem çıktısı segmentler.
+            reference_segments  : Referans konuşma segmentleri.
+            total_duration      : Toplam zaman ekseni (saniye).
+            resolution_ms       : Frame çözünürlüğü.
+
+        Returns:
+            Hesaplanan metrikleri içeren sözlük.
+        """
+        if total_duration <= 0 or resolution_ms <= 0:
+            return {
+                "resolution_ms": float(resolution_ms),
+                "tp": 0.0,
+                "fp": 0.0,
+                "fn": 0.0,
+                "tn": 0.0,
+                "precision": 0.0,
+                "recall": 0.0,
+                "f1": 0.0,
+                "accuracy": 0.0,
+                "false_alarm_rate": 0.0,
+                "miss_rate": 0.0,
+                "reference_speech_ratio": 0.0,
+                "hypothesis_speech_ratio": 0.0,
+            }
+
+        n_frames = int(total_duration * 1000 / resolution_ms) + 1
+
+        def segments_to_activity(segs: List[dict]) -> List[bool]:
+            frames = [False] * n_frames
+            for seg in segs:
+                start_frame = int(float(seg.get("start", 0.0)) * 1000 / resolution_ms)
+                end_frame = int(float(seg.get("end", 0.0)) * 1000 / resolution_ms)
+                for frame_idx in range(max(0, start_frame), min(n_frames, end_frame)):
+                    frames[frame_idx] = True
+            return frames
+
+        ref_frames = segments_to_activity(reference_segments)
+        hyp_frames = segments_to_activity(hypothesis_segments)
+
+        tp = fp = fn = tn = 0
+        for ref_active, hyp_active in zip(ref_frames, hyp_frames):
+            if ref_active and hyp_active:
+                tp += 1
+            elif not ref_active and hyp_active:
+                fp += 1
+            elif ref_active and not hyp_active:
+                fn += 1
+            else:
+                tn += 1
+
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0.0
+        accuracy = (tp + tn) / n_frames if n_frames > 0 else 0.0
+        false_alarm_rate = fp / (fp + tn) if (fp + tn) > 0 else 0.0
+        miss_rate = fn / (fn + tp) if (fn + tp) > 0 else 0.0
+
+        return {
+            "resolution_ms": float(resolution_ms),
+            "tp": float(tp),
+            "fp": float(fp),
+            "fn": float(fn),
+            "tn": float(tn),
+            "precision": round(precision, 4),
+            "recall": round(recall, 4),
+            "f1": round(f1, 4),
+            "accuracy": round(accuracy, 4),
+            "false_alarm_rate": round(false_alarm_rate, 4),
+            "miss_rate": round(miss_rate, 4),
+            "reference_speech_ratio": round(sum(ref_frames) / n_frames, 4),
+            "hypothesis_speech_ratio": round(sum(hyp_frames) / n_frames, 4),
+        }
+
+    @staticmethod
     def calculate_der(
         hypothesis_segments: List[dict],
         reference_segments: List[dict],

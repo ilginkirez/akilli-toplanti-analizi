@@ -308,3 +308,66 @@ def test_ai_analysis_service_uses_local_speech_timeline_when_available(tmp_path,
     ]
     assert "[Ayse | 00:00:00 - 00:00:01]" in transcript_payload["full_text"]
     assert "[Mehmet | 00:00:02 - 00:00:03]" in transcript_payload["full_text"]
+
+
+def test_ai_analysis_service_runs_langgraph_pipeline(tmp_path, monkeypatch):
+    from src.services.meeting_store import MeetingStore
+    from src.services.session_store import SessionStore
+    import src.services.ai_analysis_service as ai_analysis_module
+
+    store = SessionStore(str(tmp_path / "storage"), str(tmp_path / "recordings"))
+    meetings = MeetingStore(str(tmp_path / "meetings.db"))
+
+    monkeypatch.setattr(ai_analysis_module, "session_store", store)
+    monkeypatch.setattr(ai_analysis_module, "meeting_store", meetings)
+
+    service = ai_analysis_module.AIAnalysisService(
+        recordings_dir=str(tmp_path / "recordings"),
+        llm=FakeLLM(),
+    )
+
+    monkeypatch.setattr(
+        service,
+        "_build_transcript",
+        lambda session, sources: (
+            [{"speaker": "Ayse", "start": 0.0, "end": 1.0, "text": "Merhaba"}],
+            "Merhaba",
+        ),
+    )
+    monkeypatch.setattr(
+        service,
+        "_summarize_meeting",
+        lambda transcript, segments: {
+            "executiveSummary": "Kisa ozet",
+            "keyDecisions": ["Karar"],
+            "topics": ["Konu"],
+        },
+    )
+    monkeypatch.setattr(
+        service,
+        "_extract_tasks",
+        lambda transcript, segments, meeting_date: [
+            {
+                "task": "Sunumu hazirla",
+                "assignee": "Ayse",
+                "due_date": "",
+                "priority": "high",
+                "confidence": 0.8,
+                "type": "direct",
+                "needs_review": False,
+            }
+        ],
+    )
+
+    state = service._run_analysis_graph(
+        session_id="session-graph",
+        session={"meeting_id": "m-graph"},
+        sources=[],
+        meeting_date="2026-04-24",
+    )
+
+    assert state["full_text"] == "Merhaba"
+    assert state["summary_result"]["executiveSummary"] == "Kisa ozet"
+    assert state["action_items"][0]["task"] == "Sunumu hazirla"
+    assert state["summary_output"].executiveSummary == "Kisa ozet"
+    assert state["summary_output"].actionItems[0].title == "Sunumu hazirla"

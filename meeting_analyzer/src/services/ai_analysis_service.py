@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from .ai_llm_client import DEFAULT_MODEL, LLMError, GroqLLM
+from .ai_agents import build_meeting_analysis_graph
 from .ai_output_models import MeetingSummaryOutput, build_meeting_summary_output
 from .participant_identity import is_system_participant
 from .ai_transcription import (
@@ -226,6 +227,7 @@ class AIAnalysisService:
     ) -> None:
         self.recordings_dir = Path(recordings_dir or session_store.recordings_dir)
         self.llm = llm
+        self.analysis_graph = build_meeting_analysis_graph(self)
 
     def analyze_session(self, session_id: str, *, force: bool = False) -> dict[str, Any]:
         session = session_store.load_session(session_id)
@@ -250,22 +252,26 @@ class AIAnalysisService:
             if not sources:
                 raise AIAnalysisError("AI analizi icin uygun ses kaydi bulunamadi.")
 
-            transcript_segments, full_text = self._build_transcript(session, sources)
-            if not full_text.strip():
-                raise AIAnalysisError("Anlamli transkript olusturulamadi.")
-
-            summary_result = self._summarize_meeting(full_text, transcript_segments)
-            action_items = self._extract_tasks(
-                full_text,
-                transcript_segments,
+            graph_state = self._run_analysis_graph(
+                session_id=session_id,
+                session=session,
+                sources=sources,
                 meeting_date=self._resolve_meeting_date(session),
             )
-            summary_output = build_meeting_summary_output(
-                executive_summary=summary_result["executiveSummary"],
-                key_decisions=summary_result["keyDecisions"],
-                action_items=action_items,
-                topics=summary_result["topics"],
-            )
+            transcript_segments = graph_state.get("transcript_segments") or []
+            full_text = str(graph_state.get("full_text") or "")
+            if not full_text.strip():
+                raise AIAnalysisError("Anlamli transkript olusturulamadi.")
+            summary_output = graph_state.get("summary_output")
+            if not isinstance(summary_output, MeetingSummaryOutput):
+                summary_result = graph_state.get("summary_result") or {}
+                action_items = graph_state.get("action_items") or []
+                summary_output = build_meeting_summary_output(
+                    executive_summary=summary_result.get("executiveSummary", ""),
+                    key_decisions=summary_result.get("keyDecisions", []),
+                    action_items=action_items,
+                    topics=summary_result.get("topics", []),
+                )
 
             analysis_dir = self.recordings_dir / session_id / "analysis" / "ai"
             analysis_dir.mkdir(parents=True, exist_ok=True)
@@ -377,6 +383,23 @@ class AIAnalysisService:
         if not ai_analysis.get("transcript_path") or not ai_analysis.get("summary_path"):
             return True
         return False
+
+    def _run_analysis_graph(
+        self,
+        *,
+        session_id: str,
+        session: dict[str, Any],
+        sources: list[ParticipantAudioSource],
+        meeting_date: str,
+    ) -> dict[str, Any]:
+        return self.analysis_graph.invoke(
+            {
+                "session_id": session_id,
+                "session": session,
+                "sources": sources,
+                "meeting_date": meeting_date,
+            }
+        )
 
     def _collect_sources(self, session: dict[str, Any]) -> list[ParticipantAudioSource]:
         sources: list[ParticipantAudioSource] = []
