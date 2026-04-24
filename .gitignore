@@ -13,11 +13,9 @@ __pycache__/
 *.py[cod]
 *.pyo
 
-# Local env files
+# Env dosyaları (sadece .env gizli, .env.example repoda kalır)
 .env
-.env.*
-compose.oracle.env
-compose.prod.env
+!.env.example
 
 # Notebook / editor noise
 .ipynb_checkpoints/

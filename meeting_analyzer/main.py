@@ -22,13 +22,18 @@ import sys
 import os
 
 from dotenv import load_dotenv
-load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(BASE_DIR)
 
-# Backend'i kendi klasöründen çalıştırarak tüm göreli yolları tek yerde topluyoruz.
-os.chdir(BASE_DIR)
-load_dotenv(os.path.join(BASE_DIR, ".env"), override=False)
+# Önce proje kök dizinindeki .env'yi yükle, yoksa meeting_analyzer/.env'ye bak
+root_env = os.path.join(ROOT_DIR, ".env")
+local_env = os.path.join(BASE_DIR, ".env")
+
+if os.path.isfile(root_env):
+    load_dotenv(root_env)
+if os.path.isfile(local_env):
+    load_dotenv(local_env, override=False)
 sys.path.insert(0, BASE_DIR)
 
 

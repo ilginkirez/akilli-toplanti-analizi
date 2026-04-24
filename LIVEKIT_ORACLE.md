@@ -14,7 +14,7 @@ calisir.
 ## Gerekli dosyalar
 
 - `docker-compose.oracle.yml`
-- `compose.oracle.env`
+- `.env`
 - `Caddyfile.oracle`
 - `meeting_analyzer/src/services/livekit_service.py`
 - `frontend/src/app/hooks/useMeeting.ts`
@@ -35,11 +35,11 @@ calisir.
 
 ```bash
 cd ~/akilli-toplanti-analizi
-cp compose.oracle.env.example compose.oracle.env
-nano compose.oracle.env
-docker compose --env-file compose.oracle.env -f docker-compose.oracle.yml up -d --build
-docker compose --env-file compose.oracle.env -f docker-compose.oracle.yml ps
-docker compose --env-file compose.oracle.env -f docker-compose.oracle.yml logs -f livekit coturn gateway backend
+cp .env.example .env
+nano .env
+docker compose --env-file .env -f docker-compose.oracle.yml up -d --build
+docker compose --env-file .env -f docker-compose.oracle.yml ps
+docker compose --env-file .env -f docker-compose.oracle.yml logs -f livekit coturn gateway backend
 ```
 
 ## Beklenen health sonucu

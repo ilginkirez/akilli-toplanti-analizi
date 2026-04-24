@@ -11,7 +11,7 @@ Guncel mimari `LiveKit + Coturn + FastAPI + React` uzerine kuruludur.
 - `meeting_analyzer/src/storage/`: oturum metadata dosyalari
 - `meeting_analyzer/recordings/`: participant bazli ses kayitlari ve analiz ciktilari
 - `docker-compose.oracle.yml`: Oracle Ubuntu uzerindeki canli servis orkestrasyonu
-- `compose.oracle.env.example`: Oracle dagitimi icin ornek env dosyasi
+- `.env.example`: Tum ortam degiskenleri icin ornek env dosyasi
 - `LIVEKIT_ORACLE.md`: LiveKit/Oracle kurulum notlari
 
 ## Guncel Mimari
@@ -87,15 +87,15 @@ git pull --ff-only origin master || git pull --ff-only akilli-toplanti-analizi m
 ### 4. Docker stack'i yeniden build et ve ayaga kaldir
 
 ```bash
-docker compose --env-file compose.oracle.env -f docker-compose.oracle.yml up -d --build
-docker compose --env-file compose.oracle.env -f docker-compose.oracle.yml ps
-docker compose --env-file compose.oracle.env -f docker-compose.oracle.yml logs --tail 120 gateway backend
+docker compose --env-file .env -f docker-compose.oracle.yml up -d --build
+docker compose --env-file .env -f docker-compose.oracle.yml ps
+docker compose --env-file .env -f docker-compose.oracle.yml logs --tail 120 gateway backend
 ```
 
 ## Onemli Notlar
 
 - `git pull` ve `docker compose` komutlari Windows'ta degil, Ubuntu VM icinde calistirilmalidir.
-- `compose.oracle.env` dosyasi proje klasoru icinde bulunmalidir.
+- `.env` dosyasi proje klasoru icinde bulunmalidir.
 - Windows tarafinda `Docker Desktop` kapaliysa yerel `docker compose` komutlari calismaz.
 - Sunucuda remote adi `origin` degilse ikinci `git pull` alternatifi kullanilabilir.
 
