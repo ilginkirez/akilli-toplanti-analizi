@@ -1,0 +1,43 @@
+{
+  "meeting_date": "2026-04-25",
+  "raw_response": {
+    "action_items": [
+      {
+        "task": "Mikrofon izni sorununu coz",
+        "assignee": "Ilgin Kirez",
+        "due_date": "2026-04-26",
+        "priority": "high",
+        "confidence": 0.95,
+        "type": "direct",
+        "needs_review": false
+      },
+      {
+        "task": "Kullanici analiz raporunu hazirla",
+        "assignee": "Ilgin Kirez",
+        "due_date": "2026-04-29",
+        "priority": "",
+        "confidence": 0.8,
+        "type": "volunteer",
+        "needs_review": false
+      },
+      {
+        "task": "On-boarding akisini yeniden tasarla",
+        "assignee": "Merve Catalkaya",
+        "due_date": "2026-04-26",
+        "priority": "high",
+        "confidence": 0.9,
+        "type": "direct",
+        "needs_review": false
+      },
+      {
+        "task": "Dashboard tasarimini guncelle",
+        "assignee": "",
+        "due_date": "",
+        "priority": "",
+        "confidence": 0.6,
+        "type": "conditional",
+        "needs_review": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,1140 @@
+{
+  "session_id": "meet-m-eb2b7632",
+  "created_at": "2026-04-24T19:25:18.382041+00:00",
+  "status": "ended",
+  "total_duration_sec": null,
+  "participants": [
+    {
+      "participant_id": "par_937b69",
+      "display_name": "Ilgın Kirez",
+      "session_id": "meet-m-eb2b7632",
+      "connection_id": "PA_K5xBi5hbZPbK",
+      "stream_id": "TR_VCqm6wkpoMnC6b",
+      "stream_ids": [
+        "TR_AMimQVSQwduvXD",
+        "TR_VCqm6wkpoMnC6b"
+      ],
+      "join_time": "2026-04-24T19:25:24.643Z",
+      "leave_time": "2026-04-24T19:26:44.447312+00:00",
+      "active": false,
+      "device_type": "mobile",
+      "browser": "safari",
+      "os": "macos",
+      "audio_device": "unknown",
+      "room_condition": "unknown",
+      "network_type": "unknown",
+      "network_notes": null,
+      "client_data": {
+        "display_name": "Ilgın Kirez"
+      },
+      "server_data": {
+        "participant_id": "par_937b69",
+        "display_name": "Ilgın Kirez",
+        "session_id": "meet-m-eb2b7632",
+        "device_info": {
+          "browser": "safari",
+          "os": "macos",
+          "device_type": "mobile"
+        },
+        "issued_at": "2026-04-24T19:25:18.440771+00:00"
+      },
+      "location": null,
+      "ip": null,
+      "platform": null,
+      "recording_file": "meet-m-eb2b7632/individual/par_937b69-TR_AMimQVSQwduvXD.ogg",
+      "recording_files": [
+        {
+          "stream_id": "TR_AMimQVSQwduvXD",
+          "connection_id": "PA_K5xBi5hbZPbK",
+          "file_path": "meet-m-eb2b7632/individual/par_937b69-TR_AMimQVSQwduvXD.ogg",
+          "has_audio": true,
+          "has_video": false,
+          "type_of_video": "NONE",
+          "start_time_offset_ms": null,
+          "end_time_offset_ms": null,
+          "size": null,
+          "mime_type": "audio/ogg",
+          "device_label": "livekit_track_egress",
+          "recorded_started_at": "2026-04-24T19:25:23.740183+00:00",
+          "recorded_ended_at": "2026-04-24T19:26:34.376Z"
+        }
+      ],
+      "stream_recording_id": "TR_AMimQVSQwduvXD",
+      "audio_egress": {
+        "egress_id": "EG_DD6SnbGaiJk2",
+        "track_id": "TR_AMimQVSQwduvXD",
+        "connection_id": "PA_K5xBi5hbZPbK",
+        "relative_path": "meet-m-eb2b7632/individual/par_937b69-TR_AMimQVSQwduvXD.ogg",
+        "started_at": "2026-04-24T19:25:23.740183+00:00",
+        "status": "completed",
+        "ended_at": "2026-04-24T19:26:34.376Z",
+        "reason": "client_leave",
+        "file_path": "meet-m-eb2b7632/individual/par_937b69-TR_AMimQVSQwduvXD.ogg",
+        "stop_result": {
+          "egress_id": "EG_DD6SnbGaiJk2",
+          "room_id": "RM_wE3C2dXVref8",
+          "status": "EGRESS_ENDING",
+          "track": {
+            "room_name": "meet-m-eb2b7632",
+            "track_id": "TR_AMimQVSQwduvXD",
+            "file": {
+              "filepath": "/out/recordings/meet-m-eb2b7632/individual/par_937b69-TR_AMimQVSQwduvXD.ogg"
+            }
+          },
+          "file": {
+            "filename": "/out/recordings/meet-m-eb2b7632/individual/par_937b69-TR_AMimQVSQwduvXD.ogg",
+            "started_at": "1777058723962192813"
+          },
+          "started_at": "1777058723731478413",
+          "room_name": "meet-m-eb2b7632",
+          "file_results": [
+            {
+              "filename": "/out/recordings/meet-m-eb2b7632/individual/par_937b69-TR_AMimQVSQwduvXD.ogg",
+              "started_at": "1777058723962192813"
+            }
+          ],
+          "updated_at": "1777058794510908820",
+          "details": "End reason: StopEgress API",
+          "source_type": "EGRESS_SOURCE_TYPE_SDK"
+        }
+      },
+      "leave_reason": "participant_left"
+    },
+    {
+      "participant_id": "par_697f47",
+      "display_name": "Merve Çatalkaya",
+      "session_id": "meet-m-eb2b7632",
+      "connection_id": "PA_z5dNrzA8HCER",
+      "stream_id": "TR_VCtWde3TZYxFkG",
+      "stream_ids": [
+        "TR_AMc3PtQBxjtBMj",
+        "TR_VCtWde3TZYxFkG"
+      ],
+      "join_time": "2026-04-24T19:25:21.918Z",
+      "leave_time": "2026-04-24T19:26:30.058196+00:00",
+      "active": false,
+      "device_type": "desktop",
+      "browser": "chrome",
+      "os": "windows",
+      "audio_device": "unknown",
+      "room_condition": "unknown",
+      "network_type": "unknown",
+      "network_notes": null,
+      "client_data": {
+        "display_name": "Merve Çatalkaya"
+      },
+      "server_data": {
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "session_id": "meet-m-eb2b7632",
+        "device_info": {
+          "browser": "chrome",
+          "os": "windows",
+          "device_type": "desktop"
+        },
+        "issued_at": "2026-04-24T19:25:20.057119+00:00"
+      },
+      "location": null,
+      "ip": null,
+      "platform": null,
+      "recording_file": "meet-m-eb2b7632/individual/par_697f47-TR_AMc3PtQBxjtBMj.ogg",
+      "recording_files": [
+        {
+          "stream_id": "TR_AMc3PtQBxjtBMj",
+          "connection_id": "PA_z5dNrzA8HCER",
+          "file_path": "meet-m-eb2b7632/individual/par_697f47-TR_AMc3PtQBxjtBMj.ogg",
+          "has_audio": true,
+          "has_video": false,
+          "type_of_video": "NONE",
+          "start_time_offset_ms": null,
+          "end_time_offset_ms": null,
+          "size": null,
+          "mime_type": "audio/ogg",
+          "device_label": "livekit_track_egress",
+          "recorded_started_at": "2026-04-24T19:25:21.590116+00:00",
+          "recorded_ended_at": "2026-04-24T19:26:29.921Z"
+        }
+      ],
+      "stream_recording_id": "TR_AMc3PtQBxjtBMj",
+      "audio_egress": {
+        "egress_id": "EG_afuTdynfmrVs",
+        "track_id": "TR_AMc3PtQBxjtBMj",
+        "connection_id": "PA_z5dNrzA8HCER",
+        "relative_path": "meet-m-eb2b7632/individual/par_697f47-TR_AMc3PtQBxjtBMj.ogg",
+        "started_at": "2026-04-24T19:25:21.590116+00:00",
+        "status": "completed",
+        "ended_at": "2026-04-24T19:26:29.921Z",
+        "reason": "client_leave",
+        "file_path": "meet-m-eb2b7632/individual/par_697f47-TR_AMc3PtQBxjtBMj.ogg",
+        "stop_result": {
+          "egress_id": "EG_afuTdynfmrVs",
+          "room_id": "RM_wE3C2dXVref8",
+          "status": "EGRESS_ENDING",
+          "track": {
+            "room_name": "meet-m-eb2b7632",
+            "track_id": "TR_AMc3PtQBxjtBMj",
+            "file": {
+              "filepath": "/out/recordings/meet-m-eb2b7632/individual/par_697f47-TR_AMc3PtQBxjtBMj.ogg"
+            }
+          },
+          "file": {
+            "filename": "/out/recordings/meet-m-eb2b7632/individual/par_697f47-TR_AMc3PtQBxjtBMj.ogg",
+            "started_at": "1777058721787857036"
+          },
+          "started_at": "1777058721580460954",
+          "room_name": "meet-m-eb2b7632",
+          "file_results": [
+            {
+              "filename": "/out/recordings/meet-m-eb2b7632/individual/par_697f47-TR_AMc3PtQBxjtBMj.ogg",
+              "started_at": "1777058721787857036"
+            }
+          ],
+          "updated_at": "1777058789957271320",
+          "details": "End reason: StopEgress API",
+          "source_type": "EGRESS_SOURCE_TYPE_SDK"
+        }
+      },
+      "leave_reason": "participant_left"
+    }
+  ],
+  "connections": {
+    "par_937b69": "par_937b69",
+    "PA_K5xBi5hbZPbK": "par_937b69",
+    "par_697f47": "par_697f47",
+    "PA_z5dNrzA8HCER": "par_697f47"
+  },
+  "streams": {
+    "TR_AMc3PtQBxjtBMj": {
+      "stream_id": "TR_AMc3PtQBxjtBMj",
+      "connection_id": "PA_z5dNrzA8HCER",
+      "participant_id": "par_697f47",
+      "audio_enabled": true,
+      "video_enabled": false,
+      "video_source": "microphone",
+      "media_type": "audio",
+      "recording_file": null
+    },
+    "TR_VCtWde3TZYxFkG": {
+      "stream_id": "TR_VCtWde3TZYxFkG",
+      "connection_id": "PA_z5dNrzA8HCER",
+      "participant_id": "par_697f47",
+      "audio_enabled": true,
+      "video_enabled": true,
+      "video_source": "CAMERA",
+      "media_type": "livekit_participant",
+      "recording_file": null
+    },
+    "TR_AMimQVSQwduvXD": {
+      "stream_id": "TR_AMimQVSQwduvXD",
+      "connection_id": "PA_K5xBi5hbZPbK",
+      "participant_id": "par_937b69",
+      "audio_enabled": true,
+      "video_enabled": false,
+      "video_source": "microphone",
+      "media_type": "audio",
+      "recording_file": null
+    },
+    "TR_VCqm6wkpoMnC6b": {
+      "stream_id": "TR_VCqm6wkpoMnC6b",
+      "connection_id": "PA_K5xBi5hbZPbK",
+      "participant_id": "par_937b69",
+      "audio_enabled": true,
+      "video_enabled": true,
+      "video_source": "CAMERA",
+      "media_type": "livekit_participant",
+      "recording_file": null
+    }
+  },
+  "recording": {
+    "mode": "LIVEKIT_TRACK_EGRESS",
+    "name": "meet-m-eb2b7632",
+    "status": "uploaded",
+    "recording_id": null,
+    "has_audio": true,
+    "has_video": false,
+    "started_at": "2026-04-24T19:25:18.453636+00:00",
+    "stopped_at": "2026-04-24T19:26:34.376Z",
+    "ready_at": "2026-04-24T19:27:03.956769+00:00",
+    "archive_path": null,
+    "manifest_path": null,
+    "size_bytes": null,
+    "duration_sec": null,
+    "reason": null,
+    "files": [
+      {
+        "participant_id": "par_697f47",
+        "connection_id": "PA_z5dNrzA8HCER",
+        "stream_id": "TR_AMc3PtQBxjtBMj",
+        "file_path": "meet-m-eb2b7632/individual/par_697f47-TR_AMc3PtQBxjtBMj.ogg",
+        "size": null,
+        "has_audio": true,
+        "has_video": false,
+        "mime_type": "audio/ogg",
+        "device_label": "livekit_track_egress",
+        "start_time_offset_ms": null,
+        "end_time_offset_ms": null,
+        "recorded_started_at": "2026-04-24T19:25:21.590116+00:00",
+        "recorded_ended_at": "2026-04-24T19:26:29.921Z"
+      },
+      {
+        "participant_id": "par_937b69",
+        "connection_id": "PA_K5xBi5hbZPbK",
+        "stream_id": "TR_AMimQVSQwduvXD",
+        "file_path": "meet-m-eb2b7632/individual/par_937b69-TR_AMimQVSQwduvXD.ogg",
+        "size": null,
+        "has_audio": true,
+        "has_video": false,
+        "mime_type": "audio/ogg",
+        "device_label": "livekit_track_egress",
+        "start_time_offset_ms": null,
+        "end_time_offset_ms": null,
+        "recorded_started_at": "2026-04-24T19:25:23.740183+00:00",
+        "recorded_ended_at": "2026-04-24T19:26:34.376Z"
+      }
+    ],
+    "last_event": null
+  },
+  "speech_analysis": {
+    "status": "ready",
+    "generated_at": "2026-04-24T19:27:18.718598+00:00",
+    "timebase": "recording",
+    "recording_started_at": "2026-04-24T19:25:18.453636+00:00",
+    "segments_path": "meet-m-eb2b7632/analysis/speech_segments.json",
+    "rttm_path": "meet-m-eb2b7632/analysis/speakers.rttm",
+    "segments": [
+      {
+        "segment_id": 1,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 6.59,
+        "end_sec": 12.17,
+        "duration_sec": 5.58,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:25:25.043636+00:00",
+        "end_at": "2026-04-24T19:25:30.623636+00:00"
+      },
+      {
+        "segment_id": 2,
+        "type": "overlap",
+        "overlap": true,
+        "start_sec": 12.17,
+        "end_sec": 18.25,
+        "duration_sec": 6.08,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          },
+          {
+            "participant_id": "par_937b69",
+            "display_name": "Ilgın Kirez"
+          }
+        ],
+        "start_at": "2026-04-24T19:25:30.623636+00:00",
+        "end_at": "2026-04-24T19:25:36.703636+00:00"
+      },
+      {
+        "segment_id": 3,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 23.61,
+        "end_sec": 23.95,
+        "duration_sec": 0.34,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:25:42.063636+00:00",
+        "end_at": "2026-04-24T19:25:42.403636+00:00"
+      },
+      {
+        "segment_id": 4,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 23.96,
+        "end_sec": 24.2,
+        "duration_sec": 0.24,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:25:42.413636+00:00",
+        "end_at": "2026-04-24T19:25:42.653636+00:00"
+      },
+      {
+        "segment_id": 5,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 24.21,
+        "end_sec": 24.87,
+        "duration_sec": 0.66,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:25:42.663636+00:00",
+        "end_at": "2026-04-24T19:25:43.323636+00:00"
+      },
+      {
+        "segment_id": 6,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 24.88,
+        "end_sec": 26.04,
+        "duration_sec": 1.16,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:25:43.333636+00:00",
+        "end_at": "2026-04-24T19:25:44.493636+00:00"
+      },
+      {
+        "segment_id": 7,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 26.05,
+        "end_sec": 26.53,
+        "duration_sec": 0.48,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:25:44.503636+00:00",
+        "end_at": "2026-04-24T19:25:44.983636+00:00"
+      },
+      {
+        "segment_id": 8,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 26.63,
+        "end_sec": 27.64,
+        "duration_sec": 1.01,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:25:45.083636+00:00",
+        "end_at": "2026-04-24T19:25:46.093636+00:00"
+      },
+      {
+        "segment_id": 9,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 27.8,
+        "end_sec": 28.17,
+        "duration_sec": 0.37,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:25:46.253636+00:00",
+        "end_at": "2026-04-24T19:25:46.623636+00:00"
+      },
+      {
+        "segment_id": 10,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 28.39,
+        "end_sec": 29.03,
+        "duration_sec": 0.64,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:25:46.843636+00:00",
+        "end_at": "2026-04-24T19:25:47.483636+00:00"
+      },
+      {
+        "segment_id": 11,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 29.08,
+        "end_sec": 29.58,
+        "duration_sec": 0.5,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:25:47.533636+00:00",
+        "end_at": "2026-04-24T19:25:48.033636+00:00"
+      },
+      {
+        "segment_id": 12,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 29.98,
+        "end_sec": 30.6,
+        "duration_sec": 0.62,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:25:48.433636+00:00",
+        "end_at": "2026-04-24T19:25:49.053636+00:00"
+      },
+      {
+        "segment_id": 13,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 30.63,
+        "end_sec": 30.96,
+        "duration_sec": 0.33,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:25:49.083636+00:00",
+        "end_at": "2026-04-24T19:25:49.413636+00:00"
+      },
+      {
+        "segment_id": 14,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 30.99,
+        "end_sec": 31.25,
+        "duration_sec": 0.26,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:25:49.443636+00:00",
+        "end_at": "2026-04-24T19:25:49.703636+00:00"
+      },
+      {
+        "segment_id": 15,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 31.75,
+        "end_sec": 34.56,
+        "duration_sec": 2.81,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:25:50.203636+00:00",
+        "end_at": "2026-04-24T19:25:53.013636+00:00"
+      },
+      {
+        "segment_id": 16,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 34.56,
+        "end_sec": 34.82,
+        "duration_sec": 0.26,
+        "participants": [
+          {
+            "participant_id": "par_937b69",
+            "display_name": "Ilgın Kirez"
+          }
+        ],
+        "participant_id": "par_937b69",
+        "display_name": "Ilgın Kirez",
+        "start_at": "2026-04-24T19:25:53.013636+00:00",
+        "end_at": "2026-04-24T19:25:53.273636+00:00"
+      },
+      {
+        "segment_id": 17,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 34.86,
+        "end_sec": 35.54,
+        "duration_sec": 0.68,
+        "participants": [
+          {
+            "participant_id": "par_937b69",
+            "display_name": "Ilgın Kirez"
+          }
+        ],
+        "participant_id": "par_937b69",
+        "display_name": "Ilgın Kirez",
+        "start_at": "2026-04-24T19:25:53.313636+00:00",
+        "end_at": "2026-04-24T19:25:53.993636+00:00"
+      },
+      {
+        "segment_id": 18,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 35.65,
+        "end_sec": 36.59,
+        "duration_sec": 0.94,
+        "participants": [
+          {
+            "participant_id": "par_937b69",
+            "display_name": "Ilgın Kirez"
+          }
+        ],
+        "participant_id": "par_937b69",
+        "display_name": "Ilgın Kirez",
+        "start_at": "2026-04-24T19:25:54.103636+00:00",
+        "end_at": "2026-04-24T19:25:55.043636+00:00"
+      },
+      {
+        "segment_id": 19,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 37.19,
+        "end_sec": 37.61,
+        "duration_sec": 0.42,
+        "participants": [
+          {
+            "participant_id": "par_937b69",
+            "display_name": "Ilgın Kirez"
+          }
+        ],
+        "participant_id": "par_937b69",
+        "display_name": "Ilgın Kirez",
+        "start_at": "2026-04-24T19:25:55.643636+00:00",
+        "end_at": "2026-04-24T19:25:56.063636+00:00"
+      },
+      {
+        "segment_id": 20,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 37.65,
+        "end_sec": 38.05,
+        "duration_sec": 0.4,
+        "participants": [
+          {
+            "participant_id": "par_937b69",
+            "display_name": "Ilgın Kirez"
+          }
+        ],
+        "participant_id": "par_937b69",
+        "display_name": "Ilgın Kirez",
+        "start_at": "2026-04-24T19:25:56.103636+00:00",
+        "end_at": "2026-04-24T19:25:56.503636+00:00"
+      },
+      {
+        "segment_id": 21,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 38.13,
+        "end_sec": 39.15,
+        "duration_sec": 1.02,
+        "participants": [
+          {
+            "participant_id": "par_937b69",
+            "display_name": "Ilgın Kirez"
+          }
+        ],
+        "participant_id": "par_937b69",
+        "display_name": "Ilgın Kirez",
+        "start_at": "2026-04-24T19:25:56.583636+00:00",
+        "end_at": "2026-04-24T19:25:57.603636+00:00"
+      },
+      {
+        "segment_id": 22,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 39.44,
+        "end_sec": 40.06,
+        "duration_sec": 0.62,
+        "participants": [
+          {
+            "participant_id": "par_937b69",
+            "display_name": "Ilgın Kirez"
+          }
+        ],
+        "participant_id": "par_937b69",
+        "display_name": "Ilgın Kirez",
+        "start_at": "2026-04-24T19:25:57.893636+00:00",
+        "end_at": "2026-04-24T19:25:58.513636+00:00"
+      },
+      {
+        "segment_id": 23,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 40.1,
+        "end_sec": 40.63,
+        "duration_sec": 0.53,
+        "participants": [
+          {
+            "participant_id": "par_937b69",
+            "display_name": "Ilgın Kirez"
+          }
+        ],
+        "participant_id": "par_937b69",
+        "display_name": "Ilgın Kirez",
+        "start_at": "2026-04-24T19:25:58.553636+00:00",
+        "end_at": "2026-04-24T19:25:59.083636+00:00"
+      },
+      {
+        "segment_id": 24,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 40.7,
+        "end_sec": 41.01,
+        "duration_sec": 0.31,
+        "participants": [
+          {
+            "participant_id": "par_937b69",
+            "display_name": "Ilgın Kirez"
+          }
+        ],
+        "participant_id": "par_937b69",
+        "display_name": "Ilgın Kirez",
+        "start_at": "2026-04-24T19:25:59.153636+00:00",
+        "end_at": "2026-04-24T19:25:59.463636+00:00"
+      },
+      {
+        "segment_id": 25,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 44.76,
+        "end_sec": 46.77,
+        "duration_sec": 2.01,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:26:03.213636+00:00",
+        "end_at": "2026-04-24T19:26:05.223636+00:00"
+      },
+      {
+        "segment_id": 26,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 47.39,
+        "end_sec": 47.59,
+        "duration_sec": 0.2,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:26:05.843636+00:00",
+        "end_at": "2026-04-24T19:26:06.043636+00:00"
+      },
+      {
+        "segment_id": 27,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 47.69,
+        "end_sec": 48.71,
+        "duration_sec": 1.02,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:26:06.143636+00:00",
+        "end_at": "2026-04-24T19:26:07.163636+00:00"
+      },
+      {
+        "segment_id": 28,
+        "type": "overlap",
+        "overlap": true,
+        "start_sec": 48.71,
+        "end_sec": 49.51,
+        "duration_sec": 0.8,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          },
+          {
+            "participant_id": "par_937b69",
+            "display_name": "Ilgın Kirez"
+          }
+        ],
+        "start_at": "2026-04-24T19:26:07.163636+00:00",
+        "end_at": "2026-04-24T19:26:07.963636+00:00"
+      },
+      {
+        "segment_id": 29,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 49.56,
+        "end_sec": 49.93,
+        "duration_sec": 0.37,
+        "participants": [
+          {
+            "participant_id": "par_937b69",
+            "display_name": "Ilgın Kirez"
+          }
+        ],
+        "participant_id": "par_937b69",
+        "display_name": "Ilgın Kirez",
+        "start_at": "2026-04-24T19:26:08.013636+00:00",
+        "end_at": "2026-04-24T19:26:08.383636+00:00"
+      },
+      {
+        "segment_id": 30,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 50.04,
+        "end_sec": 54.01,
+        "duration_sec": 3.97,
+        "participants": [
+          {
+            "participant_id": "par_937b69",
+            "display_name": "Ilgın Kirez"
+          }
+        ],
+        "participant_id": "par_937b69",
+        "display_name": "Ilgın Kirez",
+        "start_at": "2026-04-24T19:26:08.493636+00:00",
+        "end_at": "2026-04-24T19:26:12.463636+00:00"
+      },
+      {
+        "segment_id": 31,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 54.08,
+        "end_sec": 54.29,
+        "duration_sec": 0.21,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:26:12.533636+00:00",
+        "end_at": "2026-04-24T19:26:12.743636+00:00"
+      },
+      {
+        "segment_id": 32,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 54.49,
+        "end_sec": 54.87,
+        "duration_sec": 0.38,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:26:12.943636+00:00",
+        "end_at": "2026-04-24T19:26:13.323636+00:00"
+      },
+      {
+        "segment_id": 33,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 54.97,
+        "end_sec": 56.03,
+        "duration_sec": 1.06,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:26:13.423636+00:00",
+        "end_at": "2026-04-24T19:26:14.483636+00:00"
+      },
+      {
+        "segment_id": 34,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 56.03,
+        "end_sec": 57.13,
+        "duration_sec": 1.1,
+        "participants": [
+          {
+            "participant_id": "par_937b69",
+            "display_name": "Ilgın Kirez"
+          }
+        ],
+        "participant_id": "par_937b69",
+        "display_name": "Ilgın Kirez",
+        "start_at": "2026-04-24T19:26:14.483636+00:00",
+        "end_at": "2026-04-24T19:26:15.583636+00:00"
+      },
+      {
+        "segment_id": 35,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 57.24,
+        "end_sec": 57.57,
+        "duration_sec": 0.33,
+        "participants": [
+          {
+            "participant_id": "par_937b69",
+            "display_name": "Ilgın Kirez"
+          }
+        ],
+        "participant_id": "par_937b69",
+        "display_name": "Ilgın Kirez",
+        "start_at": "2026-04-24T19:26:15.693636+00:00",
+        "end_at": "2026-04-24T19:26:16.023636+00:00"
+      },
+      {
+        "segment_id": 36,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 60.83,
+        "end_sec": 61.86,
+        "duration_sec": 1.03,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:26:19.283636+00:00",
+        "end_at": "2026-04-24T19:26:20.313636+00:00"
+      },
+      {
+        "segment_id": 37,
+        "type": "overlap",
+        "overlap": true,
+        "start_sec": 61.86,
+        "end_sec": 66.48,
+        "duration_sec": 4.62,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          },
+          {
+            "participant_id": "par_937b69",
+            "display_name": "Ilgın Kirez"
+          }
+        ],
+        "start_at": "2026-04-24T19:26:20.313636+00:00",
+        "end_at": "2026-04-24T19:26:24.933636+00:00"
+      },
+      {
+        "segment_id": 38,
+        "type": "single",
+        "overlap": false,
+        "start_sec": 66.5,
+        "end_sec": 66.89,
+        "duration_sec": 0.39,
+        "participants": [
+          {
+            "participant_id": "par_697f47",
+            "display_name": "Merve Çatalkaya"
+          }
+        ],
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "start_at": "2026-04-24T19:26:24.953636+00:00",
+        "end_at": "2026-04-24T19:26:25.343636+00:00"
+      }
+    ],
+    "summary": [
+      {
+        "participant_id": "par_937b69",
+        "display_name": "Ilgın Kirez",
+        "segment_count": 16,
+        "single_segment_count": 13,
+        "overlap_segment_count": 3,
+        "total_speaking_sec": 22.45,
+        "overlap_involved_sec": 11.5,
+        "first_spoken_sec": 12.17,
+        "last_spoken_sec": 66.48,
+        "speaking_percentage_of_recording": 31.82,
+        "speaking_percentage_of_active_speech": 51.31,
+        "overlap_percentage_of_speaking": 51.22
+      },
+      {
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "segment_count": 25,
+        "single_segment_count": 22,
+        "overlap_segment_count": 3,
+        "total_speaking_sec": 32.8,
+        "overlap_involved_sec": 11.5,
+        "first_spoken_sec": 6.59,
+        "last_spoken_sec": 66.89,
+        "speaking_percentage_of_recording": 46.49,
+        "speaking_percentage_of_active_speech": 74.97,
+        "overlap_percentage_of_speaking": 35.06
+      }
+    ],
+    "metrics": {
+      "recording_duration_sec": 70.553,
+      "processing_duration_sec": 5.8521,
+      "real_time_factor": 0.0829,
+      "processing_speed_x": 12.056,
+      "active_speech_sec": 43.75,
+      "active_speech_percentage": 62.01,
+      "single_speech_sec": 32.25,
+      "single_speech_percentage": 45.71,
+      "overlap_duration_sec": 11.5,
+      "overlap_percentage_of_recording": 16.3,
+      "overlap_percentage_of_active_speech": 26.29,
+      "silence_duration_sec": 26.803,
+      "silence_percentage": 37.99,
+      "segment_count": 38,
+      "single_segment_count": 35,
+      "overlap_segment_count": 3,
+      "segment_density_per_min": 32.3161,
+      "average_segment_duration_sec": 1.1513,
+      "median_segment_duration_sec": 0.62
+    },
+    "analysis_parameters": {
+      "vad_backend": "energy",
+      "sample_rate_hz": 16000,
+      "frame_length_ms": 25,
+      "hop_length_ms": 10,
+      "adaptive_window_sec": 30.0,
+      "threshold_multiplier": 2.5,
+      "noise_floor": 0.02,
+      "global_speech_floor": 0.03,
+      "use_spectral": true,
+      "spectral_flatness_threshold": 0.6,
+      "bleed_ratio": 0.15,
+      "dominant_ratio": 5.0,
+      "min_segment_ms": 200
+    },
+    "source_tracks": [
+      {
+        "participant_id": "par_937b69",
+        "display_name": "Ilgın Kirez",
+        "stream_id": "TR_AMimQVSQwduvXD",
+        "connection_id": "PA_K5xBi5hbZPbK",
+        "file_path": "meet-m-eb2b7632/individual/par_937b69-TR_AMimQVSQwduvXD.ogg",
+        "start_time_offset_ms": 0,
+        "end_time_offset_ms": null,
+        "has_audio": true
+      },
+      {
+        "participant_id": "par_697f47",
+        "display_name": "Merve Çatalkaya",
+        "stream_id": "TR_AMc3PtQBxjtBMj",
+        "connection_id": "PA_z5dNrzA8HCER",
+        "file_path": "meet-m-eb2b7632/individual/par_697f47-TR_AMc3PtQBxjtBMj.ogg",
+        "start_time_offset_ms": 0,
+        "end_time_offset_ms": null,
+        "has_audio": true
+      }
+    ],
+    "error": null,
+    "session_id": "meet-m-eb2b7632"
+  },
+  "ai_analysis": {
+    "status": "ready",
+    "generated_at": "2026-04-24T19:30:16.577468+00:00",
+    "provider": "groq",
+    "model": "llama-3.3-70b-versatile",
+    "transcript_path": "meet-m-eb2b7632/analysis/ai/transcript.json",
+    "transcript_segment_count": 18,
+    "transcript_char_count": 1317,
+    "summary_path": "meet-m-eb2b7632/analysis/ai/summary.json",
+    "executive_summary": "Toplantıda kullanıcı sayısının arttığı ancak retention oranının düştüğü ve özellikle ilk iki dakikada yüksek kayıp olduğu görüldü. Mikrofon izni sorununun en büyük problem olduğu belirlendi. Merve Çatalkaya on-boarding tarafını, Ilgın Kirez ise teknik analiz kısmını üstlendi.",
+    "key_decisions": [
+      "Merve Çatalkaya on-boarding tarafını alacak",
+      "Ilgın Kirez teknik analiz kısmını halledecek"
+    ],
+    "topics": [
+      "Kullanıcı Sayısı ve Retention",
+      "Mikrofon İzni Sorunu",
+      "On-boarding ve Teknik Analiz"
+    ],
+    "action_items": [
+      {
+        "id": "action-item-1-teknik-analiz-k-sm-n-halledece-im",
+        "title": "Teknik analiz kısmını halledeceğim",
+        "description": null,
+        "assignee_id": "person-ilg-n-kirez",
+        "due_date": null,
+        "priority": "medium",
+        "needs_review": false
+      },
+      {
+        "id": "action-item-2-on-boarding-taraf-n-al-yorum",
+        "title": "On-boarding tarafını alıyorum",
+        "description": null,
+        "assignee_id": "person-merve-atalkaya",
+        "due_date": null,
+        "priority": "medium",
+        "needs_review": false
+      }
+    ],
+    "error": null,
+    "completed": [
+      "transcription_agent",
+      "summary_agent",
+      "action_item_agent"
+    ]
+  },
+  "webhook": {
+    "events_received": 18,
+    "last_event_at": "2026-04-24T19:27:03.682345+00:00"
+  },
+  "meeting_id": "m-eb2b7632",
+  "meeting_title": "deneme",
+  "finalized_at": "2026-04-24T19:27:03.826319+00:00"
+}

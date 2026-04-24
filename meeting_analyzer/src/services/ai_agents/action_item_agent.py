@@ -24,20 +24,47 @@ Kurallar:
 - Her action item kisa, net ve uygulanabilir olsun.
 - Ayni gorevi farkli sekilde tekrar etme.
 - assignee sadece transcriptte aciksa yaz; degilse bos string don.
-- due_date sadece transcriptte acik ve kesin bir takvim tarihi varsa doldur.
-- Goreli tarih ifadelerini takvim tarihine cevirme: yarin, haftaya, cuma, ay sonu gibi ifadelerde due_date bos string olsun.
-- meeting_date bilgisinden tarih turetme.
+- due_date: Transcriptte kesin bir takvim tarihi varsa dogrudan YYYY-MM-DD formatinda yaz.
+  Transcriptte goreli bir tarih ifadesi varsa (yarin, haftaya, gelecek pazartesi, cuma, ay sonu, 3 gun icinde vb.)
+  meeting_date degerini referans alarak hesapla ve YYYY-MM-DD formatinda yaz.
+  Ornegin meeting_date "2026-04-25" ise ve konusmaci "yarin" diyorsa due_date "2026-04-26" olur.
+  Eger ne kesin ne de goreli bir tarih yoksa bos string don.
 - priority sadece transcriptte net bicimde anlasiliyorsa doldur; aksi halde bos string don.
 - Confidence 0.0 ile 1.0 arasinda olsun.
 - Confidence 0.65'ten kucukse needs_review true olsun, degilse false olsun.
 - Type alani sadece su degerlerden biri olsun: direct, volunteer, implicit, conditional, group.
-- direct: gorev bir kisiye dogrudan verildi.
-- volunteer: kisi gorevi kendi ustlendi.
-- implicit: yapilacak is var ama atama veya talimat dolayli.
-- conditional: gorev bir kosula bagli.
-- group: gorev ekip ya da grup icin ortak.
+  - direct: gorev bir kisiye dogrudan verildi.
+  - volunteer: kisi gorevi kendi ustlendi.
+  - implicit: yapilacak is var ama atama veya talimat dolayli.
+  - conditional: gorev bir kosula bagli.
+  - group: gorev ekip ya da grup icin ortak.
+- Transcript'in TAMAMINI oku. Bas, orta ve son kisimlardan gorev cikar.
 - Yorum, tahmin veya baglamdan cikarimla yeni detay ekleme.
 - JSON disinda hicbir metin yazma.
+
+Ornek cikti:
+{
+  "action_items": [
+    {
+      "task": "Kullanici arayuzu tasarimini guncelle",
+      "assignee": "Ahmet",
+      "due_date": "2026-04-28",
+      "priority": "high",
+      "confidence": 0.92,
+      "type": "direct",
+      "needs_review": false
+    },
+    {
+      "task": "Haftalik raporu hazirla",
+      "assignee": "",
+      "due_date": "",
+      "priority": "",
+      "confidence": 0.70,
+      "type": "implicit",
+      "needs_review": false
+    }
+  ]
+}
 
 Beklenen JSON:
 {
@@ -71,8 +98,8 @@ def run_action_item_agent(
         user_prompt=json.dumps(
             {
                 "meeting_date": meeting_date,
-                "segments": segments[:120],
-                "transcript": transcript[:12000],
+                "segments": segments[:1500],
+                "transcript": transcript[:150000],
             },
             ensure_ascii=False,
             indent=2,

@@ -1,0 +1,68 @@
+{
+  "test_timestamp": "2026-04-25T00:25:56",
+  "meeting_date": "2026-04-24",
+  "model": "llama-3.3-70b-versatile",
+  "llm_elapsed_sec": 1.65,
+  "raw_items_count": 3,
+  "normalized_items_count": 3,
+  "action_items": [
+    {
+      "task": "Onboarding tarafını geliştirme",
+      "assignee": "Merve Çatalkaya",
+      "due_date": "",
+      "priority": "",
+      "confidence": 0.9,
+      "type": "direct",
+      "needs_review": false
+    },
+    {
+      "task": "Teknik analiz kısmını halletme",
+      "assignee": "Ilgın Kirez",
+      "due_date": "",
+      "priority": "",
+      "confidence": 0.9,
+      "type": "direct",
+      "needs_review": false
+    },
+    {
+      "task": "Analizleri kısa sürede çıkarma",
+      "assignee": "Ilgın Kirez",
+      "due_date": "",
+      "priority": "",
+      "confidence": 0.8,
+      "type": "direct",
+      "needs_review": false
+    }
+  ],
+  "raw_llm_response": {
+    "action_items": [
+      {
+        "task": "Onboarding tarafını geliştirme",
+        "assignee": "Merve Çatalkaya",
+        "due_date": "",
+        "priority": "",
+        "confidence": 0.9,
+        "type": "direct",
+        "needs_review": false
+      },
+      {
+        "task": "Teknik analiz kısmını halletme",
+        "assignee": "Ilgın Kirez",
+        "due_date": "",
+        "priority": "",
+        "confidence": 0.9,
+        "type": "direct",
+        "needs_review": false
+      },
+      {
+        "task": "Analizleri kısa sürede çıkarma",
+        "assignee": "Ilgın Kirez",
+        "due_date": "",
+        "priority": "",
+        "confidence": 0.8,
+        "type": "direct",
+        "needs_review": false
+      }
+    ]
+  }
+}

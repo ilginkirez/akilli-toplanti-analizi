@@ -1,0 +1,243 @@
+{
+  "session_id": "meet-m-eb2b7632",
+  "test_timestamp": "2026-04-24T23:08:27",
+  "model_whisper": "whisper-large-v3",
+  "model_llm": "llama-3.3-70b-versatile",
+  "total_elapsed_sec": 14.45,
+  "transcript_segments": [
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_697f47",
+      "start": 6.59,
+      "end": 18.25,
+      "text": "Alo. Sesim geliyor mu? Tamam.",
+      "source_segment_ids": [
+        1,
+        2
+      ]
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_937b69",
+      "start": 12.17,
+      "end": 18.25,
+      "text": "sesin güzel geliyor",
+      "source_segment_ids": [
+        2
+      ]
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_697f47",
+      "start": 23.61,
+      "end": 34.56,
+      "text": "Merhaba Ilgın, nasılsın? Son metriklere baktım, fark ettin mi? Kullanıcı sayısı artıyor ama retention düşüyor. Özellikle ilk iki dakikada kayıp çok yüksek.",
+      "source_segment_ids": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_937b69",
+      "start": 34.56,
+      "end": 36.59,
+      "text": "Merve iyiyim. Evet ben de fark ettim.",
+      "source_segment_ids": [
+        16,
+        17,
+        18
+      ]
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_937b69",
+      "start": 37.19,
+      "end": 41.01,
+      "text": "En büyük soru mikrofon izni gibi görünüyor. Kullanıcıların çoğu arada takılıyor.",
+      "source_segment_ids": [
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ]
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_697f47",
+      "start": 44.76,
+      "end": 46.77,
+      "text": "Aynen bu kritik.",
+      "source_segment_ids": [
+        25
+      ]
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_697f47",
+      "start": 47.39,
+      "end": 49.51,
+      "text": "Ben onboarding tarafını alıyorum.",
+      "source_segment_ids": [
+        26,
+        27,
+        28
+      ]
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_937b69",
+      "start": 48.71,
+      "end": 54.01,
+      "text": "Tamamdır. Ben de teknik analiz kısmını halledeceğim.",
+      "source_segment_ids": [
+        28,
+        29,
+        30
+      ]
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_697f47",
+      "start": 54.08,
+      "end": 56.03,
+      "text": "Süper. O zaman hızlıca ilerleyelim.",
+      "source_segment_ids": [
+        31,
+        32,
+        33
+      ]
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_937b69",
+      "start": 56.03,
+      "end": 57.57,
+      "text": "Ben analizleri kısa sürede çıkaracağım.",
+      "source_segment_ids": [
+        34,
+        35
+      ]
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_697f47",
+      "start": 60.83,
+      "end": 66.89,
+      "text": "Tamamdır. Teşekkürler. Görüşürüz. İyi akşamlar.",
+      "source_segment_ids": [
+        36,
+        37,
+        38
+      ]
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_937b69",
+      "start": 61.86,
+      "end": 66.48,
+      "text": "Görüşürüz. İyi akşamlar.",
+      "source_segment_ids": [
+        37
+      ]
+    }
+  ],
+  "full_text": "[Merve Çatalkaya | 00:00:06 - 00:00:18]\nAlo. Sesim geliyor mu? Tamam.\n\n[Ilgın Kirez | 00:00:12 - 00:00:18]\nsesin güzel geliyor\n\n[Merve Çatalkaya | 00:00:23 - 00:00:34]\nMerhaba Ilgın, nasılsın? Son metriklere baktım, fark ettin mi? Kullanıcı sayısı artıyor ama retention düşüyor. Özellikle ilk iki dakikada kayıp çok yüksek.\n\n[Ilgın Kirez | 00:00:34 - 00:00:36]\nMerve iyiyim. Evet ben de fark ettim.\n\n[Ilgın Kirez | 00:00:37 - 00:00:41]\nEn büyük soru mikrofon izni gibi görünüyor. Kullanıcıların çoğu arada takılıyor.\n\n[Merve Çatalkaya | 00:00:44 - 00:00:46]\nAynen bu kritik.\n\n[Merve Çatalkaya | 00:00:47 - 00:00:49]\nBen onboarding tarafını alıyorum.\n\n[Ilgın Kirez | 00:00:48 - 00:00:54]\nTamamdır. Ben de teknik analiz kısmını halledeceğim.\n\n[Merve Çatalkaya | 00:00:54 - 00:00:56]\nSüper. O zaman hızlıca ilerleyelim.\n\n[Ilgın Kirez | 00:00:56 - 00:00:57]\nBen analizleri kısa sürede çıkaracağım.\n\n[Merve Çatalkaya | 00:01:00 - 00:01:06]\nTamamdır. Teşekkürler. Görüşürüz. İyi akşamlar.\n\n[Ilgın Kirez | 00:01:01 - 00:01:06]\nGörüşürüz. İyi akşamlar.",
+  "summary_result": {
+    "executiveSummary": "Kullanıcı sayısı artıyor ancak retention düşüyor. Özellikle ilk iki dakikada kayıp çok yüksek. Mikrofon izni kullanıcıların çoğu için sorun teşkil ediyor. Merve Çatalkaya onboarding tarafını, Ilgın Kirez ise teknik analiz kısmını ele alacak.",
+    "keyDecisions": [
+      "Merve Çatalkaya onboarding tarafını alacak",
+      "Ilgın Kirez teknik analiz kısmını halledecek"
+    ],
+    "topics": [
+      "Kullanıcı Sayısı ve Retention",
+      "Mikrofon İzni Sorunu",
+      "Onboarding",
+      "Teknik Analiz"
+    ]
+  },
+  "action_items": [
+    {
+      "task": "Onboarding tarafını almak",
+      "assignee": "Merve Çatalkaya",
+      "due_date": "",
+      "priority": "",
+      "confidence": 0.9,
+      "type": "direct",
+      "needs_review": false
+    },
+    {
+      "task": "Teknik analiz kısmını halletmek",
+      "assignee": "Ilgın Kirez",
+      "due_date": "",
+      "priority": "",
+      "confidence": 0.9,
+      "type": "direct",
+      "needs_review": false
+    },
+    {
+      "task": "Analizleri kısa sürede çıkarmak",
+      "assignee": "Ilgın Kirez",
+      "due_date": "",
+      "priority": "",
+      "confidence": 0.9,
+      "type": "direct",
+      "needs_review": false
+    }
+  ],
+  "summary_output": {
+    "executiveSummary": "Kullanıcı sayısı artıyor ancak retention düşüyor. Özellikle ilk iki dakikada kayıp çok yüksek. Mikrofon izni kullanıcıların çoğu için sorun teşkil ediyor. Merve Çatalkaya onboarding tarafını, Ilgın Kirez ise teknik analiz kısmını ele alacak.",
+    "keyDecisions": [
+      "Merve Çatalkaya onboarding tarafını alacak",
+      "Ilgın Kirez teknik analiz kısmını halledecek"
+    ],
+    "actionItems": [
+      {
+        "id": "action-item-1-onboarding-taraf-n-almak",
+        "title": "Onboarding tarafını almak",
+        "description": null,
+        "assignee_id": "person-merve-atalkaya",
+        "due_date": null,
+        "priority": "medium",
+        "needs_review": false
+      },
+      {
+        "id": "action-item-2-teknik-analiz-k-sm-n-halletmek",
+        "title": "Teknik analiz kısmını halletmek",
+        "description": null,
+        "assignee_id": "person-ilg-n-kirez",
+        "due_date": null,
+        "priority": "medium",
+        "needs_review": false
+      },
+      {
+        "id": "action-item-3-analizleri-k-sa-s-rede-karmak",
+        "title": "Analizleri kısa sürede çıkarmak",
+        "description": null,
+        "assignee_id": "person-ilg-n-kirez",
+        "due_date": null,
+        "priority": "medium",
+        "needs_review": false
+      }
+    ],
+    "topics": [
+      "Kullanıcı Sayısı ve Retention",
+      "Mikrofon İzni Sorunu",
+      "Onboarding",
+      "Teknik Analiz"
+    ]
+  }
+}
