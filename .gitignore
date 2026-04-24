@@ -37,5 +37,8 @@ meeting_analyzer/cdr/
 # Large local datasets
 meeting_analyzer/ami_data/
 
+# Archived local prototypes
+agents/
+
 # Archives generated during tests/runs
 *.zip
