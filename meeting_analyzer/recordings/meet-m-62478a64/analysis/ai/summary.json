@@ -1,0 +1,73 @@
+{
+  "session_id": "meet-m-62478a64",
+  "generated_at": "2026-04-29T10:03:11.151057+00:00",
+  "executiveSummary": "Toplantıda, uygulamanın kullanıcı sayısında artış olmasına rağmen, retention oranlarında düşüş gözlemledi. Kullanıcıların uygulamada kalma sürelerinin kısa olması ve onboarding sürecinin uzunluğu sorun olarak tespit edildi. Teknik direktöre Android çökme sorunu iletilecek, onboarding süreci yeniden ele alınacak ve pazarlama ekibi süre dahil edilecek.",
+  "keyDecisions": [
+    "Android çökme sorunu teknik direktöre iletilecek ve önceliklendirilecek",
+    "Onboarding süreci ürün ekibiyle yeniden ele alınacak",
+    "Sosyal giriş seçenekleri teknik olarak değerlendirecek ve AB test planı hazırlanacak",
+    "Pazarlama ekibi süre dahil edilecek"
+  ],
+  "actionItems": [
+    {
+      "id": "action-item-1-android-kme-sorununu-teknik-direkt-re-il",
+      "title": "Android çökme sorununu teknik direktöre ilet ve önceliklendir",
+      "description": null,
+      "assignee_id": "person-merve-atalkaya",
+      "due_date": null,
+      "priority": "high",
+      "needs_review": false
+    },
+    {
+      "id": "action-item-2-onboarding-s-recini-r-n-ekibiyle-yeniden",
+      "title": "Onboarding sürecini ürün ekibiyle yeniden ele al",
+      "description": null,
+      "assignee_id": "person-merve-atalkaya",
+      "due_date": null,
+      "priority": "high",
+      "needs_review": false
+    },
+    {
+      "id": "action-item-3-sosyal-giri-se-eneklerini-teknik-olarak-",
+      "title": "Sosyal giriş seçeneklerini teknik olarak değerlendirecek ve AB test planı hazırla",
+      "description": null,
+      "assignee_id": null,
+      "due_date": null,
+      "priority": "medium",
+      "needs_review": true
+    },
+    {
+      "id": "action-item-4-pazarlama-ekibini-s-rece-dahil-et",
+      "title": "Pazarlama ekibini sürece dahil et",
+      "description": null,
+      "assignee_id": "person-merve-atalkaya",
+      "due_date": null,
+      "priority": "medium",
+      "needs_review": false
+    },
+    {
+      "id": "action-item-5-giri-ekran-na-google-ve-facebook-ile-h-z",
+      "title": "Giriş ekranına Google ve Facebook ile hızlı giriş seçenekleri ekleyerek onboarding süresini kısalt",
+      "description": null,
+      "assignee_id": null,
+      "due_date": null,
+      "priority": "medium",
+      "needs_review": true
+    },
+    {
+      "id": "action-item-6-her-pazartesi-sabah-k-sa-bir-dashboard-d",
+      "title": "Her pazartesi sabahı kısa bir dashboard değerlendirme toplantısı yap",
+      "description": null,
+      "assignee_id": "person-merve-atalkaya",
+      "due_date": null,
+      "priority": "low",
+      "needs_review": false
+    }
+  ],
+  "topics": [
+    "Kullanıcı Sayısı ve Retention Oranları",
+    "Onboarding Süreci",
+    "Teknik Sorunlar",
+    "Pazarlama Stratejisi"
+  ]
+}

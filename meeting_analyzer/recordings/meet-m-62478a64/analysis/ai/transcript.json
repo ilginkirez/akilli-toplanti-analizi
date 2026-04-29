@@ -1,0 +1,630 @@
+{
+  "session_id": "meet-m-62478a64",
+  "generated_at": "2026-04-29T10:03:11.151057+00:00",
+  "full_text": "[Merve Çatalkaya]: Merhaba Ilgın, nasılsın?\n[Merve Çatalkaya]: Biraz yoğun görünüyorsun. Her şey yoğunda mı?\n[Ilgın Kirez]: Merhaba Merve, iyi günler. Teşekkür ederim. İyiyim.\n[Merve Çatalkaya]: Evet doğru tahmin ettim. Son raporları detaylı şekilde inceledim ve bazı noktalar beni gerçekten endişelendirdi.\n[Merve Çatalkaya]: Kullanıcı sayısında oldukça ciddi bir artış var. Aylık bazda yaklaşık %35'lik bir büyüme söz konusu.\n[Merve Çatalkaya]: Bu pazarlama tarafı için oldukça olumlu bir gelişme. Ancak retention oranlarında belirgin bir düşüş gözlemliyoruz.\n[Merve Çatalkaya]: Yani kullanıcılar uygulamayı indiriyor hatta giriş yapıyor ama uygulamada kalma süreleri ciddi şekilde azalmış.\n[Ilgın Kirez]: Evet, son günlerde olduğu için yoğun bir tabipodayız.\n[Ilgın Kirez]: Özellikle bu hafta yöneticiyle önemli bir değerlenme toplantım var.\n[Merve Çatalkaya]: Bu durum uzun vadede büyümemizi olumsuz etkileyebilir.\n[Ilgın Kirez]: Ama hiççeyse o toplantıda seninle bir konu ile detaylı konuşmanın daha sağlıklı olacağını düşünüyorum.\n[Ilgın Kirez]: Senin de son mediklerle ilgili bazı gözlemlerin olduğunu tahmin ediyorum.\n[Merve Çatalkaya]: Evet bu noktada iki ihtimal Ya yanl kullan kitlesini ya da deneyiminde bir sorun var A ben ikinci ihtimali daha g g onboarding s yani kullan uygulamayla ilk etkile yeterince olmayabilir\n[Ilgın Kirez]: Kesinlikle kat Ben her eten detayl inceledim ilk hafta davran olduk kritik g Yeni kullan yakla ilk hafta i uygulamay terk ediyor Oysa ge ay bu oran civar\n[Merve Çatalkaya]: Kullanıcılar uygulamaya giriyor ama ne yapmaları gerektiğini tam olarak anlayamıyor olabilirler.\n[Ilgın Kirez]: Yani çok kısa sürede ciddi bir düşüş yaşanmış. Kullanıcı sayısındaki artışın nedeni muhtemelen daha geniş bir hareketlere hitap eden reklam kampanyaları.\n[Merve Çatalkaya]: Evet bu gerçekten düşük bir süre. Peki onboarding sürecin toplam süresi ne kadar?\n[Ilgın Kirez]: Ancak bu kullanıcıların uygulamada kazıcı olmaması önemli bir problem.\n[Ilgın Kirez]: Onboard süreciyle ilgili geçen hafta önündeki bir görüşme yaptım.\n[Merve Çatalkaya]: Eğer onboarding uzun sürüyorsa kullanıcılar tamamlamadan çıkıyor olabilir.\n[Ilgın Kirez]: Onlar sürecin oldukça basit ve hızlı olduğunu düşünüyor.\n[Merve Çatalkaya]: Bu oldukça kritik bir içgörü.\n[Ilgın Kirez]: Kullanıcıların 3-4 adımda uygulamaya başlayabildiğini söylüyorlar.\n[Ilgın Kirez]: Ancak birisi biraz farklı bir hikaye anlatıyor.\n[Merve Çatalkaya]: Kullanıcıyı daha uygulamaya alışmadığın anketle karşılamak gerçekten olumsuz bir deneyim yaratabilir.\n[Ilgın Kirez]: Yeni kullanıcıların ortalama oturum sesi yalnızca 2 dakika 15 saniye.\n[Ilgın Kirez]: Bu süre kullanıcıların uygulamayı keşfetmesi için oluçu yetersiz.\n[Merve Çatalkaya]: Bence anketi zorunlu olmaktan çıkarmalı veya tamamen farklı bir yaklaşımla ele almalıyız.\n[Merve Çatalkaya]: Örneğin uygulama içinde kademeli olarak veri toplayabiliriz.\n[Ilgın Kirez]: Süreç şekilde ilerliyor.\n[Ilgın Kirez]: Giriş ekranına, e-posta doğrulama, profil oluşturma ve ardından bir anket bölümü.\n[Merve Çatalkaya]: Teknik tarafta durum nas Kullan erken sebebi performans problemleri olabilir mi\n[Ilgın Kirez]: Özellikle anket kısmı kullanıcılar için ciddi bir sürtme noktası gibi görünüyor.\n[Ilgın Kirez]: Kullanıcılardan gelen geri bildirimlerle bu kısmın gereksizce zaman alıcı bulunduğu belirtilmiş.\n[Merve Çatalkaya]: Bu çok önemli bir konu.\n[Merve Çatalkaya]: Küçük bir kullanıcı grubunu etkiliyor gibi görünse de retention üzerinde ciddi etkisi olabilir.\n[Ilgın Kirez]: Ayn fikirdeyim Onboarding tamamen de ya da daha ak bir sa daha mant olabilir anket yerine kullan uygulama i y ipu refer ekranlar veya bildirimler kullan\n[Merve Çatalkaya]: Eğer kullanıcıların %15-20'si bu sorunu yaşıyorsa bu doğrudan kayıt demektir.\n[Merve Çatalkaya]: Bu sorunu mutlaka yüksek öncelik haline getirmeliyiz.\n[Merve Çatalkaya]: Tamam bu konuyu doğrudan teknik direktöre ileteceğim ve önceliklendirilmesini sağlayacağım.\n[Ilgın Kirez]: Evet, teknik tarafta da bazı problemler mevcut.\n[Ilgın Kirez]: Özellikle Android kullanıcıları arasında uygulamanın ilk açılışta bildirim iznini silinirken çökmesi gibi bir sorun var.\n[Merve Çatalkaya]: Bu bizim ilk aksiyonumuz olsun.\n[Ilgın Kirez]: Bu problem her kullanıcı etkilemesi de belirli bir segmentte ciddi bir deneyim sorunu yaratıyor.\n[Merve Çatalkaya]: Peki onboarding dışında kullanıcı etkileşimi nasıl görünüyor?\n[Merve Çatalkaya]: Kullanıcılar uygulama içindeki özellikleri keşfediyor mu?\n[Merve Çatalkaya]: Bu da önemli bir problem. Kullanıcıya değer önerisini yeterince iyi anlatamıyoruz demektir.\n[Ilgın Kirez]: Katılıyorum, teknik ilk bir raporladım ancak şu an öncelik seviyesi düşük görünüyor.\n[Ilgın Kirez]: Seninle içince konuşmam bu konuda daha etkili olabilir.\n[Merve Çatalkaya]: Uygulama aslında bir marketplace yapısına sahip ama kullanıcı bunu fark etmiyor olabilir.\n[Ilgın Kirez]: Çok iyi olur.\n[Merve Çatalkaya]: Bu durumda kullanıcı yönlendirmemiz gerekiyor.\n[Merve Çatalkaya]: Push bildirimleri veya uygulama için mesajlarla kullanıcıyı harekete geçirebiliriz.\n[Ilgın Kirez]: MySafire Hitmap'e bir verilerine baktığımızda kullanıcıların büyük çoğunun ana sayfada kaldığını görüyoruz.\n[Merve Çatalkaya]: Bu noktada pazarlama ekibinde süre dahil etmemiz şart.\n[Ilgın Kirez]: Diğer sekmeye geçiyor olanı oldukça düşük.\n[Ilgın Kirez]: Yani kullanıcılar uygulamanın üstünde özellikleri keşfetmiyor.\n[Merve Çatalkaya]: Yine de bu konunun kendisine iletmemiz gerekiyor Ben Zeynep detayl bir e g mevcut durum payla\n[Ilgın Kirez]: Evet kullanıcılar bağlantı kuruma, içeri görüntüleme, ürün satma, hizmet satma gibi özelliklere sahip ama bunları aktif kullanmıyorlar.\n[Merve Çatalkaya]: Evet bu kullanıcı deneyimini iyileştirebilir ancak bunu doğrudan tüm kullanıcıları aşmak yerine önce kontrollü bir A-B testiyle denemeliyiz.\n[Merve Çatalkaya]: Harika. O zaman aksiyonları netleştirelim.\n[Merve Çatalkaya]: Android çökme sorunu teknik direktöre iletilecek ve önceliklendirilecek.\n[Ilgın Kirez]: Pazarlama taraf Zeynep sorunlu ama an olduk yo\n[Merve Çatalkaya]: Onboarding süreci ürün ekibiyle yeniden ele alınacak.\n[Merve Çatalkaya]: Sosyal giriş seçenekleri teknik olarak değerlendirecek ve AB test planı hazırlanacak.\n[Merve Çatalkaya]: Pazarlama ekibi süre dahil edilecek.\n[Ilgın Kirez]: Çok iyi olur. Ayrıca bir önerim daha var.\n[Ilgın Kirez]: Giriş ekranına Google ve Facebook ile hızlı giriş eleştirikleri ekleyebiliriz.\n[Merve Çatalkaya]: Metrikleri ne sıklıkla takip edelim?\n[Ilgın Kirez]: Bu sayede onboarding süreti kısalabilir.\n[Merve Çatalkaya]: Tamam o zaman her pazartesi sabahı kısa bir dashboard değerlendirme toplantısı yapalım.\n[Ilgın Kirez]: katılıyorum önce de küçük bir konu grubunda test edebiliriz\n[Merve Çatalkaya]: Genel olarak baktığımızda sorunlar net ama çözülebilir görünüyor.\n[Ilgın Kirez]: teknik işlevi konunun uygun haberlerini konuşacağım\n[Merve Çatalkaya]: Eğer bu aksiyonları hızlıca uygulayabilirsek 2-3 hafta içinde metriklerde iyileşme görmeye başlayabiliriz.\n[Ilgın Kirez]: Evet, olacağı net bir plan oldu.\n[Merve Çatalkaya]: Evet bunu ikinci aşama olarak düşünelim\n[Merve Çatalkaya]: Şimdilik belirlediğimiz aksiyonlara odaklanalım\n[Merve Çatalkaya]: Gerçekten verimli bir toplantı oldu\n[Merve Çatalkaya]: O halde yarın sabah saat 10'da\n[Ilgın Kirez]: Haftalık takliterli olabilir.\n[Merve Çatalkaya]: Tüm ekiplere tekrar görüşelim\n[Merve Çatalkaya]: Görüşmek üzere iyi çalışmalar\n[Ilgın Kirez]: Ben de aynı fikirdeyim. Eğer yine de ilişki olmazsa o zaman daha derin analizler yapmamız gerekir.\n[Ilgın Kirez]: Örneğin kullanıcı mülakatları veya nitel araştırmalar planlayabiliriz.\n[Ilgın Kirez]: Kesinlikle koordineli ilerlemek çok faydalı.\n[Ilgın Kirez]: Tamam görüşmek üzere.",
+  "segments": [
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 0.0,
+      "end": 13.66,
+      "text": "Merhaba Ilgın, nasılsın?"
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 13.78,
+      "end": 16.26,
+      "text": "Biraz yoğun görünüyorsun. Her şey yoğunda mı?"
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 30.0,
+      "end": 55.96,
+      "text": "Merhaba Merve, iyi günler. Teşekkür ederim. İyiyim."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 30.0,
+      "end": 40.32,
+      "text": "Evet doğru tahmin ettim. Son raporları detaylı şekilde inceledim ve bazı noktalar beni gerçekten endişelendirdi."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 40.92,
+      "end": 46.72,
+      "text": "Kullanıcı sayısında oldukça ciddi bir artış var. Aylık bazda yaklaşık %35'lik bir büyüme söz konusu."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 47.56,
+      "end": 53.32,
+      "text": "Bu pazarlama tarafı için oldukça olumlu bir gelişme. Ancak retention oranlarında belirgin bir düşüş gözlemliyoruz."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 53.32,
+      "end": 60.24,
+      "text": "Yani kullanıcılar uygulamayı indiriyor hatta giriş yapıyor ama uygulamada kalma süreleri ciddi şekilde azalmış."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 55.96,
+      "end": 58.62,
+      "text": "Evet, son günlerde olduğu için yoğun bir tabipodayız."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 58.62,
+      "end": 61.52,
+      "text": "Özellikle bu hafta yöneticiyle önemli bir değerlenme toplantım var."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 60.64,
+      "end": 63.5,
+      "text": "Bu durum uzun vadede büyümemizi olumsuz etkileyebilir."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 62.0,
+      "end": 65.82,
+      "text": "Ama hiççeyse o toplantıda seninle bir konu ile detaylı konuşmanın daha sağlıklı olacağını düşünüyorum."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 66.52,
+      "end": 69.16,
+      "text": "Senin de son mediklerle ilgili bazı gözlemlerin olduğunu tahmin ediyorum."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 83.32,
+      "end": 104.6898,
+      "text": "Evet bu noktada iki ihtimal Ya yanl kullan kitlesini ya da deneyiminde bir sorun var A ben ikinci ihtimali daha g g onboarding s yani kullan uygulamayla ilk etkile yeterince olmayabilir"
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 88.62,
+      "end": 113.8569,
+      "text": "Kesinlikle kat Ben her eten detayl inceledim ilk hafta davran olduk kritik g Yeni kullan yakla ilk hafta i uygulamay terk ediyor Oysa ge ay bu oran civar"
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 105.1298,
+      "end": 109.3698,
+      "text": "Kullanıcılar uygulamaya giriyor ama ne yapmaları gerektiğini tam olarak anlayamıyor olabilirler."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 114.957,
+      "end": 121.697,
+      "text": "Yani çok kısa sürede ciddi bir düşüş yaşanmış. Kullanıcı sayısındaki artışın nedeni muhtemelen daha geniş bir hareketlere hitap eden reklam kampanyaları."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 121.7298,
+      "end": 134.7498,
+      "text": "Evet bu gerçekten düşük bir süre. Peki onboarding sürecin toplam süresi ne kadar?"
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 122.1369,
+      "end": 124.7369,
+      "text": "Ancak bu kullanıcıların uygulamada kazıcı olmaması önemli bir problem."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 130.977,
+      "end": 150.177,
+      "text": "Onboard süreciyle ilgili geçen hafta önündeki bir görüşme yaptım."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 135.2298,
+      "end": 139.1098,
+      "text": "Eğer onboarding uzun sürüyorsa kullanıcılar tamamlamadan çıkıyor olabilir."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 150.577,
+      "end": 152.677,
+      "text": "Onlar sürecin oldukça basit ve hızlı olduğunu düşünüyor."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 151.7298,
+      "end": 157.6498,
+      "text": "Bu oldukça kritik bir içgörü."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 153.257,
+      "end": 156.077,
+      "text": "Kullanıcıların 3-4 adımda uygulamaya başlayabildiğini söylüyorlar."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 156.517,
+      "end": 158.677,
+      "text": "Ancak birisi biraz farklı bir hikaye anlatıyor."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 158.1498,
+      "end": 162.9298,
+      "text": "Kullanıcıyı daha uygulamaya alışmadığın anketle karşılamak gerçekten olumsuz bir deneyim yaratabilir."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 158.677,
+      "end": 162.677,
+      "text": "Yeni kullanıcıların ortalama oturum sesi yalnızca 2 dakika 15 saniye."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 163.0969,
+      "end": 165.7169,
+      "text": "Bu süre kullanıcıların uygulamayı keşfetmesi için oluçu yetersiz."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 163.6098,
+      "end": 168.2698,
+      "text": "Bence anketi zorunlu olmaktan çıkarmalı veya tamamen farklı bir yaklaşımla ele almalıyız."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 168.7098,
+      "end": 171.4498,
+      "text": "Örneğin uygulama içinde kademeli olarak veri toplayabiliriz."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 176.557,
+      "end": 177.9369,
+      "text": "Süreç şekilde ilerliyor."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 178.057,
+      "end": 181.577,
+      "text": "Giriş ekranına, e-posta doğrulama, profil oluşturma ve ardından bir anket bölümü."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 181.7298,
+      "end": 189.4396,
+      "text": "Teknik tarafta durum nas Kullan erken sebebi performans problemleri olabilir mi"
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 182.137,
+      "end": 185.257,
+      "text": "Özellikle anket kısmı kullanıcılar için ciddi bir sürtme noktası gibi görünüyor."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 185.257,
+      "end": 191.1769,
+      "text": "Kullanıcılardan gelen geri bildirimlerle bu kısmın gereksizce zaman alıcı bulunduğu belirtilmiş."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 203.8996,
+      "end": 205.5396,
+      "text": "Bu çok önemli bir konu."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 205.6196,
+      "end": 209.7996,
+      "text": "Küçük bir kullanıcı grubunu etkiliyor gibi görünse de retention üzerinde ciddi etkisi olabilir."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 208.3769,
+      "end": 219.2939,
+      "text": "Ayn fikirdeyim Onboarding tamamen de ya da daha ak bir sa daha mant olabilir anket yerine kullan uygulama i y ipu refer ekranlar veya bildirimler kullan"
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 210.3996,
+      "end": 214.6396,
+      "text": "Eğer kullanıcıların %15-20'si bu sorunu yaşıyorsa bu doğrudan kayıt demektir."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 214.8996,
+      "end": 217.3596,
+      "text": "Bu sorunu mutlaka yüksek öncelik haline getirmeliyiz."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 218.4596,
+      "end": 230.6796,
+      "text": "Tamam bu konuyu doğrudan teknik direktöre ileteceğim ve önceliklendirilmesini sağlayacağım."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 226.7539,
+      "end": 229.2739,
+      "text": "Evet, teknik tarafta da bazı problemler mevcut."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 229.6939,
+      "end": 234.2539,
+      "text": "Özellikle Android kullanıcıları arasında uygulamanın ilk açılışta bildirim iznini silinirken çökmesi gibi bir sorun var."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 231.0596,
+      "end": 232.5996,
+      "text": "Bu bizim ilk aksiyonumuz olsun."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 234.2539,
+      "end": 238.5539,
+      "text": "Bu problem her kullanıcı etkilemesi de belirli bir segmentte ciddi bir deneyim sorunu yaratıyor."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 234.9796,
+      "end": 238.4796,
+      "text": "Peki onboarding dışında kullanıcı etkileşimi nasıl görünüyor?"
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 238.8196,
+      "end": 241.5796,
+      "text": "Kullanıcılar uygulama içindeki özellikleri keşfediyor mu?"
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 248.4596,
+      "end": 258.7596,
+      "text": "Bu da önemli bir problem. Kullanıcıya değer önerisini yeterince iyi anlatamıyoruz demektir."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 254.6939,
+      "end": 258.0739,
+      "text": "Katılıyorum, teknik ilk bir raporladım ancak şu an öncelik seviyesi düşük görünüyor."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 258.4539,
+      "end": 260.4139,
+      "text": "Seninle içince konuşmam bu konuda daha etkili olabilir."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 259.1796,
+      "end": 263.9796,
+      "text": "Uygulama aslında bir marketplace yapısına sahip ama kullanıcı bunu fark etmiyor olabilir."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 264.2539,
+      "end": 270.4739,
+      "text": "Çok iyi olur."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 271.9196,
+      "end": 275.1796,
+      "text": "Bu durumda kullanıcı yönlendirmemiz gerekiyor."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 275.1796,
+      "end": 280.3996,
+      "text": "Push bildirimleri veya uygulama için mesajlarla kullanıcıyı harekete geçirebiliriz."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 278.7139,
+      "end": 284.1939,
+      "text": "MySafire Hitmap'e bir verilerine baktığımızda kullanıcıların büyük çoğunun ana sayfada kaldığını görüyoruz."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 280.7196,
+      "end": 283.5196,
+      "text": "Bu noktada pazarlama ekibinde süre dahil etmemiz şart."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 284.1939,
+      "end": 286.3139,
+      "text": "Diğer sekmeye geçiyor olanı oldukça düşük."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 286.7139,
+      "end": 289.0739,
+      "text": "Yani kullanıcılar uygulamanın üstünde özellikleri keşfetmiyor."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 287.7396,
+      "end": 294.4093,
+      "text": "Yine de bu konunun kendisine iletmemiz gerekiyor Ben Zeynep detayl bir e g mevcut durum payla"
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 294.2539,
+      "end": 307.7739,
+      "text": "Evet kullanıcılar bağlantı kuruma, içeri görüntüleme, ürün satma, hizmet satma gibi özelliklere sahip ama bunları aktif kullanmıyorlar."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 302.7693,
+      "end": 310.1693,
+      "text": "Evet bu kullanıcı deneyimini iyileştirebilir ancak bunu doğrudan tüm kullanıcıları aşmak yerine önce kontrollü bir A-B testiyle denemeliyiz."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 316.1693,
+      "end": 318.6693,
+      "text": "Harika. O zaman aksiyonları netleştirelim."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 319.0093,
+      "end": 322.6893,
+      "text": "Android çökme sorunu teknik direktöre iletilecek ve önceliklendirilecek."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 320.7739,
+      "end": 323.4109,
+      "text": "Pazarlama taraf Zeynep sorunlu ama an olduk yo"
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 323.0693,
+      "end": 325.5893,
+      "text": "Onboarding süreci ürün ekibiyle yeniden ele alınacak."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 325.9893,
+      "end": 330.0493,
+      "text": "Sosyal giriş seçenekleri teknik olarak değerlendirecek ve AB test planı hazırlanacak."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 330.5493,
+      "end": 332.1493,
+      "text": "Pazarlama ekibi süre dahil edilecek."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 331.2708,
+      "end": 333.2108,
+      "text": "Çok iyi olur. Ayrıca bir önerim daha var."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 333.3109,
+      "end": 336.5108,
+      "text": "Giriş ekranına Google ve Facebook ile hızlı giriş eleştirikleri ekleyebiliriz."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 335.6893,
+      "end": 337.8493,
+      "text": "Metrikleri ne sıklıkla takip edelim?"
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 336.8908,
+      "end": 338.4508,
+      "text": "Bu sayede onboarding süreti kısalabilir."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 337.8493,
+      "end": 346.1093,
+      "text": "Tamam o zaman her pazartesi sabahı kısa bir dashboard değerlendirme toplantısı yapalım."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 342.9309,
+      "end": 349.9508,
+      "text": "katılıyorum önce de küçük bir konu grubunda test edebiliriz"
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 348.2893,
+      "end": 351.6493,
+      "text": "Genel olarak baktığımızda sorunlar net ama çözülebilir görünüyor."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 349.9508,
+      "end": 352.2908,
+      "text": "teknik işlevi konunun uygun haberlerini konuşacağım"
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 351.8093,
+      "end": 357.0693,
+      "text": "Eğer bu aksiyonları hızlıca uygulayabilirsek 2-3 hafta içinde metriklerde iyileşme görmeye başlayabiliriz."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 352.2908,
+      "end": 370.8508,
+      "text": "Evet, olacağı net bir plan oldu."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 357.0693,
+      "end": 368.1893,
+      "text": "Evet bunu ikinci aşama olarak düşünelim"
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 368.1893,
+      "end": 370.5493,
+      "text": "Şimdilik belirlediğimiz aksiyonlara odaklanalım"
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 370.5493,
+      "end": 372.4893,
+      "text": "Gerçekten verimli bir toplantı oldu"
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 372.4893,
+      "end": 378.2693,
+      "text": "O halde yarın sabah saat 10'da"
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 374.8508,
+      "end": 376.5709,
+      "text": "Haftalık takliterli olabilir."
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 378.2693,
+      "end": 379.8093,
+      "text": "Tüm ekiplere tekrar görüşelim"
+    },
+    {
+      "speaker": "Merve Çatalkaya",
+      "participant_id": "par_934e83",
+      "start": 379.8093,
+      "end": 384.5693,
+      "text": "Görüşmek üzere iyi çalışmalar"
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 393.8508,
+      "end": 398.2908,
+      "text": "Ben de aynı fikirdeyim. Eğer yine de ilişki olmazsa o zaman daha derin analizler yapmamız gerekir."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 398.6708,
+      "end": 401.6508,
+      "text": "Örneğin kullanıcı mülakatları veya nitel araştırmalar planlayabiliriz."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 409.4908,
+      "end": 411.6708,
+      "text": "Kesinlikle koordineli ilerlemek çok faydalı."
+    },
+    {
+      "speaker": "Ilgın Kirez",
+      "participant_id": "par_cfd4ec",
+      "start": 412.2908,
+      "end": 418.2509,
+      "text": "Tamam görüşmek üzere."
+    }
+  ],
+  "sources": [
+    {
+      "participant_id": "par_cfd4ec",
+      "display_name": "Ilgın Kirez",
+      "file_path": "meet-m-62478a64/individual/par_cfd4ec-TR_AMipWn59xVZVBS.ogg",
+      "start_offset_sec": 0.0
+    },
+    {
+      "participant_id": "par_934e83",
+      "display_name": "Merve Çatalkaya",
+      "file_path": "meet-m-62478a64/individual/par_934e83-TR_AMxYSJLVPzLgrZ.ogg",
+      "start_offset_sec": 0.0
+    }
+  ]
+}

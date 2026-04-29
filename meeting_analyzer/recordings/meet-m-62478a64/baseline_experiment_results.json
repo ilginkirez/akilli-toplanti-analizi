@@ -1,0 +1,58 @@
+{
+  "A: Individual + Filter ACIK": {
+    "segment_count": 87,
+    "word_count": 832,
+    "avg_logprob_mean": -0.1706,
+    "avg_logprob_min": -0.592,
+    "no_speech_prob_mean": 0.0406,
+    "no_speech_prob_max": 0.3558,
+    "wer": 0.2315,
+    "cer": 0.0946
+  },
+  "B: Individual + Filter KAPALI": {
+    "segment_count": 89,
+    "word_count": 835,
+    "avg_logprob_mean": -0.1708,
+    "avg_logprob_min": -0.592,
+    "no_speech_prob_mean": 0.0494,
+    "no_speech_prob_max": 0.8386,
+    "wer": 0.2327,
+    "cer": 0.095
+  },
+  "C: Mixed + Filter ACIK": {
+    "segment_count": 73,
+    "word_count": 581,
+    "avg_logprob_mean": -0.2285,
+    "avg_logprob_min": -0.4192,
+    "no_speech_prob_mean": 0.0852,
+    "no_speech_prob_max": 0.2618,
+    "wer": 0.6686,
+    "cer": 0.5144
+  },
+  "D: Mixed + Filter KAPALI": {
+    "segment_count": 74,
+    "word_count": 582,
+    "avg_logprob_mean": -0.228,
+    "avg_logprob_min": -0.4192,
+    "no_speech_prob_mean": 0.0845,
+    "no_speech_prob_max": 0.2618,
+    "wer": 0.6675,
+    "cer": 0.5126
+  },
+  "per_speaker": {
+    "par_934e83-TR_AMxYSJLVPzLgrZ.ogg": {
+      "ref_words": 440,
+      "filtered_wer": 0.1659,
+      "filtered_cer": 0.0595,
+      "unfiltered_wer": 0.1659,
+      "unfiltered_cer": 0.0595
+    },
+    "par_cfd4ec-TR_AMipWn59xVZVBS.ogg": {
+      "ref_words": 411,
+      "filtered_wer": 0.3017,
+      "filtered_cer": 0.1324,
+      "unfiltered_wer": 0.3041,
+      "unfiltered_cer": 0.1343
+    }
+  }
+}
