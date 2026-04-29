@@ -73,6 +73,8 @@ class EnergyVAD:
         noise_floor: float = config.NOISE_FLOOR,
         use_spectral: bool = True,
         sfm_threshold: float = config.SPECTRAL_FLATNESS_THRESHOLD,
+        local_weight: float = 0.7,
+        global_weight: float = 0.3,
     ) -> None:
         """
         EnergyVAD örneği oluşturur.
@@ -98,6 +100,8 @@ class EnergyVAD:
         # v2: spectral flatness parametreleri
         self.use_spectral = use_spectral
         self.sfm_threshold = sfm_threshold
+        self.local_weight = local_weight
+        self.global_weight = global_weight
 
         # Örnek cinsinden hesaplanan sabitler
         self._frame_length_samples: int = int(sample_rate * frame_length_ms / 1000)
@@ -292,7 +296,7 @@ class EnergyVAD:
             start = max(0, t - W)
             local_min = float(energies[start : t + 1].min())
             # Noise estimate: yerel ve global minimumu karistir
-            noise_estimate = 0.7 * local_min + 0.3 * global_min
+            noise_estimate = self.local_weight * local_min + self.global_weight * global_min
             thresholds[t] = max(
                 self.threshold_multiplier * noise_estimate,
                 self.noise_floor,
