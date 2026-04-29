@@ -304,7 +304,12 @@ export function MeetingDetail() {
                     Transcript: {meeting.analysis?.transcriptAvailable ? 'hazir' : 'yok'}
                   </p>
                 </div>
-                {!aiSummary && (
+                {aiStatus === 'failed' && meeting.analysis?.aiError && (
+                  <div className="rounded-lg border border-dashed border-red-300 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+                    <strong>AI Analiz Hatası:</strong> {meeting.analysis.aiError}
+                  </div>
+                )}
+                {!aiSummary && aiStatus !== 'failed' && (
                   <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-400">
                     AI ozeti henuz hazir degil. Speech analysis tamamlanmis olsa bile AI katmani daha sonra hazir
                     olabilir veya hata almis olabilir.

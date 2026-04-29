@@ -12,12 +12,6 @@ from .ai_output_models import MeetingSummaryOutput, build_meeting_summary_output
 from .participant_identity import is_system_participant
 from .ai_transcription import (
     TranscriptionError,
-    transcribe_audio_clip_text,
-    transcribe_audio_segments,
-)
-from .ai_transcription import (
-    TranscriptionError,
-    transcribe_audio_clip_text,
     transcribe_audio_segments,
 )
 from .meeting_store import meeting_store
@@ -261,6 +255,88 @@ class AIAnalysisService:
         if recording_started_at:
             return str(recording_started_at).split("T", 1)[0]
         return ""
+
+    def _collect_sources(self, session: dict[str, Any]) -> list[ParticipantAudioSource]:
+        """Ses analizi icin katilimci kayit dosyalarini toplar."""
+        sources: list[ParticipantAudioSource] = []
+        index = 0
+        for participant in session.get("participants", []):
+            if is_system_participant(participant):
+                continue
+            participant_id = participant.get("participant_id")
+            if not participant_id:
+                continue
+
+            display_name = participant.get("display_name") or participant_id
+            for item in participant.get("recording_files", []):
+                if not item.get("has_audio"):
+                    continue
+                relative_path = item.get("file_path")
+                if not relative_path:
+                    continue
+                absolute_path = self.recordings_dir / relative_path
+                if not absolute_path.exists():
+                    logger.warning(
+                        "[AI] Kayit dosyasi bulunamadi, atlanacak: %s",
+                        absolute_path,
+                    )
+                    continue
+
+                start_offset_sec = float(item.get("start_time_offset_ms") or 0) / 1000.0
+                sources.append(
+                    ParticipantAudioSource(
+                        participant_id=participant_id,
+                        display_name=display_name,
+                        absolute_path=absolute_path,
+                        relative_path=relative_path,
+                        start_offset_sec=start_offset_sec,
+                        source_index=index,
+                    )
+                )
+                index += 1
+        return sources
+
+    def _build_transcript(
+        self,
+        session: dict[str, Any],
+        sources: list[ParticipantAudioSource],
+    ) -> tuple[list[dict[str, Any]], str]:
+        """Her katilimcinin ses dosyasini transkripte eder ve birlestirir."""
+        all_items: list[dict[str, Any]] = []
+        for source in sources:
+            try:
+                items = transcribe_audio_segments(
+                    str(source.absolute_path),
+                    speaker=source.display_name,
+                    participant_id=source.participant_id,
+                    offset_sec=source.start_offset_sec,
+                )
+                all_items.extend(items)
+                logger.info(
+                    "[session=%s] Transkripsiyon tamamlandi: participant=%s segment=%d",
+                    session.get("session_id", "?"),
+                    source.display_name,
+                    len(items),
+                )
+            except Exception as exc:
+                logger.warning(
+                    "[session=%s] Transkripsiyon basarisiz: participant=%s hata=%s",
+                    session.get("session_id", "?"),
+                    source.display_name,
+                    exc,
+                )
+
+        # Zamana gore sirala
+        all_items.sort(key=lambda x: float(x.get("start") or 0.0))
+
+        lines = []
+        for item in all_items:
+            speaker = item.get("speaker", "")
+            text = item.get("text", "")
+            if speaker and text:
+                lines.append(f"[{speaker}]: {text}")
+        full_text = "\n".join(lines)
+        return all_items, full_text
 
     def _model_name(self) -> str:
         if self.llm is not None:

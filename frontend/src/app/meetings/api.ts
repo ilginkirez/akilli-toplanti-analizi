@@ -121,6 +121,7 @@ export type ApiMeetingAnalysis = {
   generated_at?: string | null;
   recording_status?: string;
   ai_status: string;
+  ai_error?: string | null;
   transcript_available: boolean;
   transcript?: ApiTranscript | null;
   summary?: ApiSummary | null;
@@ -383,6 +384,7 @@ export function mergeMeetingAnalysis(meeting: Meeting, analysis: ApiMeetingAnaly
       segmentCount: analysis.timeline.length,
       summaryCount: analysis.speaking_summary.length,
       aiStatus: analysis.ai_status,
+      aiError: analysis.ai_error ?? undefined,
       transcriptAvailable: analysis.transcript_available,
     },
     aiSummary: aiSummary ?? meeting.aiSummary,

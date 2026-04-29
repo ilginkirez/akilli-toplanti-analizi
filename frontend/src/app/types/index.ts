@@ -143,6 +143,7 @@ export interface MeetingAnalysisInfo {
   segmentCount: number;
   summaryCount: number;
   aiStatus?: string;
+  aiError?: string;
   transcriptAvailable?: boolean;
 }
 

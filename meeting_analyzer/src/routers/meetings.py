@@ -396,6 +396,7 @@ def _serialize_meeting_analysis(meeting: Dict[str, Any]) -> Dict[str, Any]:
         "recording_status": recording.get("status") or "pending",
         "recording": _compute_recording_summary(session),
         "ai_status": ai_analysis.get("status") or "pending",
+        "ai_error": ai_analysis.get("error"),
         "transcript_available": transcript_payload is not None,
         "transcript": transcript_payload,
         "summary": serialized_summary,
