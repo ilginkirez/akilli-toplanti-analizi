@@ -54,6 +54,8 @@ class MultiChannelVAD:
         dominant_ratio: float = config.DOMINANT_RATIO,
         use_spectral: bool = True,
         sfm_threshold: float = config.SPECTRAL_FLATNESS_THRESHOLD,
+        local_weight: float = 0.7,
+        global_weight: float = 0.3,
         use_pyannote: bool = False,
         hf_token: str = None,
     ) -> None:
@@ -76,6 +78,8 @@ class MultiChannelVAD:
                 adaptive_window_sec=adaptive_window_sec,
                 use_spectral=use_spectral,
                 sfm_threshold=sfm_threshold,
+                local_weight=local_weight,
+                global_weight=global_weight,
             )
             logger.info("MultiChannelVAD: using EnergyVAD.")
 
