@@ -9,6 +9,11 @@ from typing import Any
 
 import httpx
 
+from src.services.turkish_normalizer import (
+    normalize_turkish_asr_output,
+    is_turkish_confirmation,
+)
+
 
 MODEL_NAME = os.getenv("AI_TRANSCRIBE_MODEL", "whisper-large-v3").strip() or "whisper-large-v3"
 TRANSCRIBE_API_URL = (
@@ -38,10 +43,12 @@ SUPPORTED_UPLOAD_SUFFIXES = {
 MIN_SEGMENT_CHARS = 3
 MIN_SEGMENT_WORDS = 2
 MAX_NO_SPEECH_PROB = 0.50
-MIN_AVG_LOGPROB = -1.0
+MIN_AVG_LOGPROB = -1.2
 RELAXED_MIN_SEGMENT_WORDS = 1
 RELAXED_MAX_NO_SPEECH_PROB = 0.75
 RELAXED_MIN_AVG_LOGPROB = -1.6
+MAX_COMPRESSION_RATIO = 2.0
+RELAXED_MAX_COMPRESSION_RATIO = 2.4
 
 logger = logging.getLogger("meeting_analyzer.ai_transcription")
 
@@ -114,7 +121,8 @@ def _preprocess_audio(input_path: str) -> str:
 def _clean_transcript(text: str) -> str:
     if not text:
         return ""
-    return re.sub(r"\s+", " ", text.strip())
+    text = re.sub(r"\s+", " ", text.strip())
+    return normalize_turkish_asr_output(text)
 
 
 def _coerce_float(value: Any) -> float | None:
@@ -274,8 +282,7 @@ def _payload_to_text(payload: dict[str, Any]) -> str:
     return _clean_transcript(str(payload.get("text") or ""))
 
 
-def _run_transcription(audio_path: str, language: str, *, vad_filter: bool = True):
-    del vad_filter
+def _run_transcription(audio_path: str, language: str):
 
     payload = _request_transcription(audio_path, language)
     segments = payload.get("segments") or []
@@ -363,17 +370,27 @@ def _segment_to_item(
     min_words: int,
     max_no_speech_prob: float,
     min_avg_logprob: float,
+    max_compression_ratio: float,
 ) -> dict[str, Any] | None:
     text = _clean_transcript(str(_segment_value(segment, "text", "") or "").strip())
     no_speech_prob = _coerce_float(_segment_value(segment, "no_speech_prob"))
     avg_logprob = _coerce_float(_segment_value(segment, "avg_logprob"))
+    compression_ratio = _coerce_float(_segment_value(segment, "compression_ratio"))
 
-    if not _is_segment_meaningful(text, min_words=min_words):
-        return None
-    if no_speech_prob is not None and no_speech_prob > max_no_speech_prob:
-        return None
-    if avg_logprob is not None and avg_logprob < min_avg_logprob:
-        return None
+    # Turkce kisa onaylamalar (evet, tamam, vb.) ozel olarak korunur
+    if is_turkish_confirmation(text):
+        # Cok yuksek no_speech bile olsa 0.90'a kadar koru
+        if no_speech_prob is not None and no_speech_prob > 0.90:
+            return None
+    else:
+        if not _is_segment_meaningful(text, min_words=min_words):
+            return None
+        if no_speech_prob is not None and no_speech_prob > max_no_speech_prob:
+            return None
+        if avg_logprob is not None and avg_logprob < min_avg_logprob:
+            return None
+        if compression_ratio is not None and compression_ratio > max_compression_ratio:
+            return None
 
     start = _coerce_float(_segment_value(segment, "start")) or 0.0
     end = _coerce_float(_segment_value(segment, "end"))
@@ -401,10 +418,12 @@ def _collect_items(
         min_words = RELAXED_MIN_SEGMENT_WORDS
         max_no_speech_prob = RELAXED_MAX_NO_SPEECH_PROB
         min_avg_logprob = RELAXED_MIN_AVG_LOGPROB
+        max_compression_ratio = RELAXED_MAX_COMPRESSION_RATIO
     else:
         min_words = MIN_SEGMENT_WORDS
         max_no_speech_prob = MAX_NO_SPEECH_PROB
         min_avg_logprob = MIN_AVG_LOGPROB
+        max_compression_ratio = MAX_COMPRESSION_RATIO
 
     items: list[dict[str, Any]] = []
     for segment in segments:
@@ -416,6 +435,7 @@ def _collect_items(
             min_words=min_words,
             max_no_speech_prob=max_no_speech_prob,
             min_avg_logprob=min_avg_logprob,
+            max_compression_ratio=max_compression_ratio,
         )
         if item is not None:
             items.append(item)
@@ -436,7 +456,7 @@ def transcribe_audio_segments(
     processed_path = _preprocess_audio(filepath)
     is_temp_file = processed_path != filepath
     try:
-        segments = list(_run_transcription(processed_path, language, vad_filter=True))
+        segments = list(_run_transcription(processed_path, language))
         items = _collect_items(
             segments,
             speaker=speaker,
@@ -462,21 +482,12 @@ def transcribe_audio_segments(
             )
             return relaxed_items
 
-        fallback_segments = list(_run_transcription(processed_path, language, vad_filter=False))
-        fallback_items = _collect_items(
-            fallback_segments,
-            speaker=speaker,
-            participant_id=participant_id,
-            offset_sec=offset_sec,
-            relaxed=True,
+        logger.warning(
+            "Transkripsiyon tum filtrelerden sonra bos dondu: speaker=%s segments=%d",
+            speaker,
+            len(segments),
         )
-        if fallback_items:
-            logger.info(
-                "Transkripsiyon ikinci deneme fallback'i kullanildi: speaker=%s segment=%d",
-                speaker,
-                len(fallback_items),
-            )
-        return fallback_items
+        return []
     finally:
         if is_temp_file and os.path.exists(processed_path):
             os.remove(processed_path)

@@ -15,7 +15,7 @@ def test_transcription_relaxed_filter_accepts_short_low_confidence_segment(tmp_p
 
     monkeypatch.setattr(transcription, "_preprocess_audio", lambda path: path)
 
-    def fake_run_transcription(path: str, language: str, *, vad_filter: bool = True):
+    def fake_run_transcription(path: str, language: str):
         return [
             SimpleNamespace(
                 text="merhaba",
@@ -46,7 +46,8 @@ def test_transcription_relaxed_filter_accepts_short_low_confidence_segment(tmp_p
     ]
 
 
-def test_transcription_retries_without_vad_when_first_pass_empty(tmp_path, monkeypatch):
+def test_transcription_returns_empty_when_all_filters_reject(tmp_path, monkeypatch):
+    """Tum filtreler segmentleri reddederse bos liste doner (artik gereksiz 2. API cagrisi yok)."""
     import src.services.ai_transcription as transcription
 
     audio_path = tmp_path / "sample.wav"
@@ -54,21 +55,13 @@ def test_transcription_retries_without_vad_when_first_pass_empty(tmp_path, monke
 
     monkeypatch.setattr(transcription, "_preprocess_audio", lambda path: path)
 
-    calls: list[bool] = []
+    call_count = 0
 
-    def fake_run_transcription(path: str, language: str, *, vad_filter: bool = True):
-        calls.append(vad_filter)
-        if vad_filter:
-            return []
-        return [
-            SimpleNamespace(
-                text="bugun raporu bitiriyorum",
-                no_speech_prob=0.2,
-                avg_logprob=-0.4,
-                start=0.0,
-                end=1.9,
-            )
-        ]
+    def fake_run_transcription(path: str, language: str):
+        nonlocal call_count
+        call_count += 1
+        # Return segments that will be filtered out by both strict and relaxed filters
+        return []
 
     monkeypatch.setattr(transcription, "_run_transcription", fake_run_transcription)
 
@@ -79,8 +72,9 @@ def test_transcription_retries_without_vad_when_first_pass_empty(tmp_path, monke
         offset_sec=0.0,
     )
 
-    assert calls == [True, False]
-    assert items[0]["text"] == "bugun raporu bitiriyorum"
+    # Sadece 1 API cagrisi yapilmali (gereksiz 2. cagri kaldirildi)
+    assert call_count == 1
+    assert items == []
 
 
 def test_run_transcription_uses_groq_verbose_segments(monkeypatch):
