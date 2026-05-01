@@ -7,7 +7,15 @@
     "no_speech_prob_mean": 0.0406,
     "no_speech_prob_max": 0.3558,
     "wer": 0.2315,
-    "cer": 0.0946
+    "cer": 0.0946,
+    "insertions": 5,
+    "deletions": 24,
+    "substitutions": 168,
+    "hits": 659,
+    "total_errors": 197,
+    "insertion_ratio": 0.0254,
+    "deletion_ratio": 0.1218,
+    "substitution_ratio": 0.8528
   },
   "B: Individual + Filter KAPALI": {
     "segment_count": 89,
@@ -17,7 +25,15 @@
     "no_speech_prob_mean": 0.0494,
     "no_speech_prob_max": 0.8386,
     "wer": 0.2327,
-    "cer": 0.095
+    "cer": 0.095,
+    "insertions": 7,
+    "deletions": 23,
+    "substitutions": 168,
+    "hits": 660,
+    "total_errors": 198,
+    "insertion_ratio": 0.0354,
+    "deletion_ratio": 0.1162,
+    "substitution_ratio": 0.8485
   },
   "C: Mixed + Filter ACIK": {
     "segment_count": 73,
@@ -27,7 +43,15 @@
     "no_speech_prob_mean": 0.0852,
     "no_speech_prob_max": 0.2618,
     "wer": 0.6686,
-    "cer": 0.5144
+    "cer": 0.5144,
+    "insertions": 6,
+    "deletions": 276,
+    "substitutions": 287,
+    "hits": 288,
+    "total_errors": 569,
+    "insertion_ratio": 0.0105,
+    "deletion_ratio": 0.4851,
+    "substitution_ratio": 0.5044
   },
   "D: Mixed + Filter KAPALI": {
     "segment_count": 74,
@@ -37,7 +61,15 @@
     "no_speech_prob_mean": 0.0845,
     "no_speech_prob_max": 0.2618,
     "wer": 0.6675,
-    "cer": 0.5126
+    "cer": 0.5126,
+    "insertions": 6,
+    "deletions": 275,
+    "substitutions": 287,
+    "hits": 289,
+    "total_errors": 568,
+    "insertion_ratio": 0.0106,
+    "deletion_ratio": 0.4842,
+    "substitution_ratio": 0.5053
   },
   "per_speaker": {
     "par_934e83-TR_AMxYSJLVPzLgrZ.ogg": {
@@ -45,14 +77,22 @@
       "filtered_wer": 0.1659,
       "filtered_cer": 0.0595,
       "unfiltered_wer": 0.1659,
-      "unfiltered_cer": 0.0595
+      "unfiltered_cer": 0.0595,
+      "insertions": 0,
+      "deletions": 10,
+      "substitutions": 63,
+      "insertion_ratio": 0.0
     },
     "par_cfd4ec-TR_AMipWn59xVZVBS.ogg": {
       "ref_words": 411,
       "filtered_wer": 0.3017,
       "filtered_cer": 0.1324,
       "unfiltered_wer": 0.3041,
-      "unfiltered_cer": 0.1343
+      "unfiltered_cer": 0.1343,
+      "insertions": 5,
+      "deletions": 14,
+      "substitutions": 105,
+      "insertion_ratio": 0.0403
     }
   }
 }

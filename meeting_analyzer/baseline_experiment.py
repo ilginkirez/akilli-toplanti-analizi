@@ -161,6 +161,23 @@ def compute_metrics(segments: list, ref_text: str = None) -> dict:
         result["wer"] = round(jiwer.wer(ref, hyp), 4)
         result["cer"] = round(jiwer.cer(ref, hyp), 4)
 
+        # --- Hata Dekompozisyonu (He & Whitehill 2025) ---
+        measures = jiwer.process_words(ref, hyp)
+        ins = measures.insertions
+        dels = measures.deletions
+        subs = measures.substitutions
+        hits = measures.hits
+        total_errors = ins + dels + subs
+
+        result["insertions"] = ins
+        result["deletions"] = dels
+        result["substitutions"] = subs
+        result["hits"] = hits
+        result["total_errors"] = total_errors
+        result["insertion_ratio"] = round(ins / total_errors, 4) if total_errors > 0 else 0.0
+        result["deletion_ratio"] = round(dels / total_errors, 4) if total_errors > 0 else 0.0
+        result["substitution_ratio"] = round(subs / total_errors, 4) if total_errors > 0 else 0.0
+
     return result
 
 
@@ -228,6 +245,14 @@ def run_experiment(audio_dir: str, ref_map: dict, ref_mixed_text: str = None):
                     "unfiltered_wer": round(jiwer.wer(ref_lower, hyp_unfiltered), 4) if hyp_unfiltered else None,
                     "unfiltered_cer": round(jiwer.cer(ref_lower, hyp_unfiltered), 4) if hyp_unfiltered else None,
                 }
+                # Hata dekompozisyonu (filtrelenmis icin)
+                if hyp_filtered:
+                    m = jiwer.process_words(ref_lower, hyp_filtered)
+                    total_err = m.insertions + m.deletions + m.substitutions
+                    per_speaker_wer[basename]["insertions"] = m.insertions
+                    per_speaker_wer[basename]["deletions"] = m.deletions
+                    per_speaker_wer[basename]["substitutions"] = m.substitutions
+                    per_speaker_wer[basename]["insertion_ratio"] = round(m.insertions / total_err, 4) if total_err > 0 else 0.0
         except Exception as e:
             print(f"    HATA: {e}")
 
@@ -394,6 +419,57 @@ def run_experiment(audio_dir: str, ref_map: dict, ref_mixed_text: str = None):
                 print(f"     Izole kanal mimarisi WER'i %{imp:.1f} azaltmistir.")
             else:
                 print(f"  -> WER (Adil): Individual ort. = %{avg_indiv_wer*100:.1f}, Mixed = %{mixed_wer*100:.1f}")
+
+    # -------------------------------------------------------------------
+    # Hata Dekompozisyonu Tablosu (He & Whitehill 2025)
+    # -------------------------------------------------------------------
+    has_decomp = any(r.get("insertions") is not None for r in results.values())
+    if has_decomp:
+        print("\n" + "=" * 95)
+        print(" HATA DEKOMPOZISYONU (Ins/Del/Sub) — He & Whitehill 2025")
+        print("=" * 95)
+        print(f"{'Kosul':<35} {'Ins':>6} {'Del':>6} {'Sub':>6} {'Total':>7} {'Ins%':>7} {'Del%':>7} {'Sub%':>7}")
+        print("-" * 95)
+        for label, m in results.items():
+            if m.get("insertions") is not None:
+                print(
+                    f"{label:<35} "
+                    f"{m['insertions']:>6} "
+                    f"{m['deletions']:>6} "
+                    f"{m['substitutions']:>6} "
+                    f"{m['total_errors']:>7} "
+                    f"{m['insertion_ratio']*100:>6.1f}% "
+                    f"{m['deletion_ratio']*100:>6.1f}% "
+                    f"{m['substitution_ratio']*100:>6.1f}%"
+                )
+        print("=" * 95)
+
+    # -------------------------------------------------------------------
+    # Leakage-Insertion Korelasyon Analizi
+    # -------------------------------------------------------------------
+    if per_speaker_wer:
+        ins_ratios = [m.get("insertion_ratio", 0) for m in per_speaker_wer.values() if m.get("insertion_ratio") is not None]
+        if ins_ratios:
+            avg_ins_ratio = sum(ins_ratios) / len(ins_ratios)
+            print("\n" + "=" * 80)
+            print(" LEAKAGE-INSERTION KORELASYON ANALIZI")
+            print("=" * 80)
+            for fname, m in per_speaker_wer.items():
+                ir = m.get("insertion_ratio")
+                if ir is not None:
+                    flag = " *** LEAKAGE SUPHELISI" if ir > 0.60 else ""
+                    print(f"  {fname:<40} Ins%={ir*100:>5.1f}%{flag}")
+            print("-" * 80)
+            print(f"  Ortalama Insertion Orani: %{avg_ins_ratio*100:.1f}")
+            if avg_ins_ratio > 0.60:
+                print("  [!] YUKSEK INSERTION ORANI: Cross-talk/leakage gostergesi.")
+                print("      Cozum: Cross-channel enerji karsilastirmasi veya")
+                print("      daha agresif no_speech_prob esigi oneriliyor.")
+            elif avg_ins_ratio > 0.40:
+                print("  [i] ORTA INSERTION ORANI: Kismi leakage olabilir.")
+            else:
+                print("  [OK] DUSUK INSERTION ORANI: Leakage etkisi sinirli.")
+            print("=" * 80)
 
     # 7. JSON Kaydet
     json_path = os.path.join(os.path.dirname(audio_dir), "baseline_experiment_results.json")
