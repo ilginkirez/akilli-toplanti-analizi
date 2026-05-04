@@ -82,10 +82,16 @@ type ApiSummaryActionItem = {
   id: string;
   title: string;
   description?: string | null;
-  assignee_id?: string | null;
+  assigned_to_user_id?: string | null;
+  assignee_name?: string | null;
   due_date?: string | null;
   priority?: MeetingActionItem['priority'];
   needs_review?: boolean;
+  ambiguous?: boolean;
+  candidates?: string[];
+  reason?: string;
+  source_quote?: string | null;
+  source_speaker?: string | null;
 };
 
 type ApiSummary = {
@@ -247,10 +253,16 @@ function mapMeetingActionItem(item: ApiSummaryActionItem): MeetingActionItem {
     id: item.id,
     title: item.title,
     description: item.description ?? undefined,
-    assigneeId: item.assignee_id ?? undefined,
+    assignedToUserId: item.assigned_to_user_id ?? undefined,
+    assigneeName: item.assignee_name ?? undefined,
     dueDate: item.due_date ?? undefined,
     priority: item.priority ?? 'medium',
     needsReview: item.needs_review ?? false,
+    ambiguous: item.ambiguous ?? false,
+    candidates: item.candidates ?? [],
+    reason: item.reason ?? undefined,
+    sourceQuote: item.source_quote ?? undefined,
+    sourceSpeaker: item.source_speaker ?? undefined,
   };
 }
 

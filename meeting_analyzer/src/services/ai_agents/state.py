@@ -12,4 +12,5 @@ class MeetingAnalysisState(TypedDict, total=False):
     full_text: str
     summary_result: dict[str, Any]
     action_items: list[dict[str, Any]]
+    meeting_participants: list[dict[str, Any]]
     summary_output: MeetingSummaryOutput

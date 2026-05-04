@@ -15,6 +15,7 @@ from .ai_transcription import (
     transcribe_audio_segments,
 )
 from .meeting_store import meeting_store
+from .notification_service import notify_assignees
 from .session_store import session_store
 
 
@@ -95,11 +96,15 @@ class AIAnalysisService:
             if not sources:
                 raise AIAnalysisError("AI analizi icin uygun ses kaydi bulunamadi.")
 
+            meeting_participants = self._collect_meeting_participants(
+                session_id, session
+            )
             graph_state = self._run_analysis_graph(
                 session_id=session_id,
                 session=session,
                 sources=sources,
                 meeting_date=self._resolve_meeting_date(session),
+                meeting_participants=meeting_participants,
             )
             transcript_segments = graph_state.get("transcript_segments") or []
             full_text = str(graph_state.get("full_text") or "")
@@ -182,6 +187,33 @@ class AIAnalysisService:
                 len(transcript_segments),
                 len(summary_output.actionItems),
             )
+
+            # Gorev bildirimleri gonder (hata olursa analiz sonucunu bozma)
+            try:
+                dashboard_url = os.getenv("DASHBOARD_URL", "").strip()
+                meeting = meeting_store.get_by_session_id(session_id)
+                if dashboard_url and meeting:
+                    dashboard_url = f"{dashboard_url}/meetings/{meeting['id']}"
+                elif not meeting:
+                    dashboard_url = None
+
+                notifications_sent = notify_assignees(
+                    action_items=graph_state.get("action_items") or [],
+                    meeting_participants=meeting_participants,
+                    dashboard_url=dashboard_url or None,
+                )
+                payload["notifications_sent"] = notifications_sent
+                session_store.update_ai_analysis(
+                    session_id, {"notifications_sent": notifications_sent}
+                )
+            except Exception:
+                logger.warning(
+                    "[session_id=%s] Gorev bildirimi gonderilemedi, analiz sonucu etkilenmedi.",
+                    session_id,
+                    exc_info=True,
+                )
+                payload["notifications_sent"] = []
+
             return payload
         except (AIAnalysisError, LLMError, TranscriptionError, FileNotFoundError) as exc:
             error_payload = {
@@ -234,6 +266,7 @@ class AIAnalysisService:
         session: dict[str, Any],
         sources: list[ParticipantAudioSource],
         meeting_date: str,
+        meeting_participants: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         return self.analysis_graph.invoke(
             {
@@ -241,8 +274,72 @@ class AIAnalysisService:
                 "session": session,
                 "sources": sources,
                 "meeting_date": meeting_date,
+                "meeting_participants": meeting_participants or [],
             }
         )
+
+    def _collect_meeting_participants(
+        self,
+        session_id: str,
+        session: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        """Meeting ve session verilerinden katilimci listesi olusturur (user_id, name, email)."""
+        participants: list[dict[str, Any]] = []
+        seen_user_ids: set[str] = set()
+
+        # Oncelikle meeting_store'dan katilimcilari al (user_id + email mevcut)
+        meeting_id = session.get("meeting_id")
+        if meeting_id:
+            meeting = meeting_store.get_meeting(meeting_id)
+            if meeting:
+                # Organizer'i ekle
+                organizer = meeting.get("organizer", {})
+                org_name = organizer.get("name", "").strip()
+                org_email = organizer.get("email", "").strip()
+                if org_name and org_email:
+                    # meeting_participants tablosundaki user_id'yi ara
+                    org_user_id = self._find_user_id_for_email(
+                        org_email, meeting.get("participants", [])
+                    )
+                    if org_user_id:
+                        participants.append({
+                            "user_id": org_user_id,
+                            "name": org_name,
+                            "email": org_email,
+                        })
+                        seen_user_ids.add(org_user_id)
+
+                # Meeting katilimcilarini ekle
+                for mp in meeting.get("participants", []):
+                    user_id = mp.get("user_id")
+                    name = mp.get("name", "").strip()
+                    email = mp.get("email", "").strip()
+                    if user_id and user_id not in seen_user_ids and name:
+                        participants.append({
+                            "user_id": user_id,
+                            "name": name,
+                            "email": email,
+                        })
+                        seen_user_ids.add(user_id)
+
+        logger.debug(
+            "[session_id=%s] Meeting katilimcilari toplandi: %d kisi",
+            session_id,
+            len(participants),
+        )
+        return participants
+
+    @staticmethod
+    def _find_user_id_for_email(
+        email: str,
+        participants: list[dict[str, Any]],
+    ) -> str | None:
+        """Verilen email adresine sahip katilimcinin user_id'sini bulur."""
+        email_lower = email.strip().lower()
+        for p in participants:
+            if (p.get("email") or "").strip().lower() == email_lower:
+                return p.get("user_id")
+        return None
 
     def _resolve_meeting_date(self, session: dict[str, Any]) -> str:
         meeting_id = session.get("meeting_id")

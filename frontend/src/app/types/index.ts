@@ -104,10 +104,16 @@ export interface MeetingActionItem {
   id: string;
   title: string;
   description?: string;
-  assigneeId?: string;
+  assignedToUserId?: string | null;
+  assigneeName?: string | null;
   dueDate?: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   needsReview?: boolean;
+  ambiguous?: boolean;
+  candidates?: string[];
+  reason?: string;
+  sourceQuote?: string;
+  sourceSpeaker?: string;
 }
 
 export interface MeetingAnalytics {

@@ -138,6 +138,10 @@ export function MeetingDetail() {
         dueDate: item.dueDate.toISOString(),
         priority: item.priority,
         needsReview: false,
+        ambiguous: false as const,
+        reason: undefined as string | undefined,
+        sourceQuote: undefined as string | undefined,
+        sourceSpeaker: undefined as string | undefined,
       };
     }
 
@@ -145,12 +149,14 @@ export function MeetingDetail() {
       id: item.id,
       title: item.title,
       description: item.description,
-      assigneeLabel: item.assigneeId
-        ? item.assigneeId.replace(/^person-/, '').replace(/-/g, ' ')
-        : undefined,
+      assigneeLabel: item.assigneeName ?? undefined,
       dueDate: item.dueDate,
       priority: item.priority,
       needsReview: item.needsReview ?? false,
+      ambiguous: item.ambiguous ?? false,
+      reason: item.reason,
+      sourceQuote: item.sourceQuote,
+      sourceSpeaker: item.sourceSpeaker,
     };
   });
   const aiStatus = meeting.analysis?.aiStatus ?? 'pending';
@@ -374,6 +380,11 @@ export function MeetingDetail() {
                               {item.needsReview && (
                                 <Badge variant="secondary">Review gerekli</Badge>
                               )}
+                              {item.ambiguous && (
+                                <Badge className="border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
+                                  Belirsiz atama
+                                </Badge>
+                              )}
                             </div>
                             {item.description && (
                               <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
@@ -382,6 +393,23 @@ export function MeetingDetail() {
                               <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-500">
                                 {item.assigneeLabel && <span>Atanan: {item.assigneeLabel}</span>}
                                 {item.dueDate && <span>Tarih: {item.dueDate.slice(0, 10)}</span>}
+                              </div>
+                            )}
+                            {item.ambiguous && item.reason && (
+                              <p className="mt-2 text-xs italic text-orange-600 dark:text-orange-400">
+                                {item.reason}
+                              </p>
+                            )}
+                            {item.sourceQuote && (
+                              <div className="mt-2 rounded border-l-2 border-blue-300 bg-blue-50 py-1 pl-3 pr-2 dark:border-blue-700 dark:bg-blue-900/20">
+                                <p className="text-xs italic text-blue-700 dark:text-blue-400">
+                                  &ldquo;{item.sourceQuote}&rdquo;
+                                  {item.sourceSpeaker && (
+                                    <span className="ml-1 not-italic font-medium text-blue-900 dark:text-blue-300">
+                                      — {item.sourceSpeaker}
+                                    </span>
+                                  )}
+                                </p>
                               </div>
                             )}
                           </div>

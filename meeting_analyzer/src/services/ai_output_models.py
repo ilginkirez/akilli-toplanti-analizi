@@ -8,10 +8,16 @@ class SummaryActionItem(BaseModel):
     id: str
     title: str
     description: str | None = None
-    assignee_id: str | None = None
+    assigned_to_user_id: str | None = None
+    assignee_name: str | None = None
     due_date: str | None = None
     priority: Literal["low", "medium", "high", "urgent"] = "medium"
     needs_review: bool = False
+    ambiguous: bool = False
+    candidates: list[str] = Field(default_factory=list)
+    reason: str = ""
+    source_quote: str | None = None
+    source_speaker: str | None = None
 
 
 class MeetingSummaryOutput(BaseModel):
@@ -48,22 +54,42 @@ def _build_action_items(items: list[dict[str, Any]]) -> list[SummaryActionItem]:
         if not title:
             continue
 
-        assignee = _normalize_text(
-            item.get("assignee_id") or item.get("assignee"),
+        assignee_name = _normalize_text(
+            item.get("assignee_name") or item.get("assignee"),
             max_length=80,
-        )
+        ) or None
         description = _normalize_text(item.get("description"), max_length=500) or None
         due_date = _normalize_text(item.get("due_date"), max_length=32) or None
+        assigned_to_user_id = item.get("assigned_to_user_id") or None
+        ambiguous = bool(item.get("ambiguous", False))
+        candidates = item.get("candidates") or []
+        if not isinstance(candidates, list):
+            candidates = []
+        candidates = [str(c) for c in candidates if c]
+        reason = _normalize_text(item.get("reason", ""), max_length=200)
+
+        source_quote = _normalize_text(
+            item.get("source_quote", ""), max_length=300
+        ) or None
+        source_speaker = _normalize_text(
+            item.get("source_speaker", ""), max_length=80
+        ) or None
 
         normalized.append(
             SummaryActionItem(
                 id=_build_action_item_id(index, title),
                 title=title,
                 description=description,
-                assignee_id=_build_assignee_id(assignee),
+                assigned_to_user_id=assigned_to_user_id,
+                assignee_name=assignee_name,
                 due_date=due_date,
                 priority=_map_priority(item.get("priority")),
                 needs_review=bool(item.get("needs_review", False)),
+                ambiguous=ambiguous,
+                candidates=candidates,
+                reason=reason,
+                source_quote=source_quote,
+                source_speaker=source_speaker,
             )
         )
 
