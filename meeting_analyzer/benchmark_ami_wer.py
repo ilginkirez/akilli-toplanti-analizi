@@ -1,26 +1,24 @@
 """
 benchmark_ami_wer.py
 --------------------
-AMI Meeting Corpus WER/cpWER Benchmark (v2 — He & Whitehill 2025 uyumlu)
+AMI Meeting Corpus WER/CER Benchmark
+Faster-Whisper (Groq) vs Deepgram Nova-2 karşılaştırması
 
-Ozellikler:
-  - Standard WER (tek konusmaci referansi)
-  - cpWER (concatenated minimum-permutation WER — tum konusmacilarin
-    referanslarinin en uygun sirada birlestirilerek hesaplanmasi)
-  - Hata Dekompozisyonu (Insertion/Deletion/Substitution)
-  - He & Whitehill Tablo II referans degerleri ile kiyaslama
-
-Kullanim:
+Kullanım:
   python benchmark_ami_wer.py
 """
 
-import itertools
 import os
 import re
 import sys
+import time
+import wave
+import tempfile
+import subprocess
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+import httpx
 import jiwer
 from dotenv import load_dotenv
 
@@ -29,34 +27,95 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 # Append src to path to import services
 sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
-from services.ai_transcription import transcribe_audio_clip_text
-import wave
+from services.deepgram_transcriber import transcribe_with_deepgram
 
 
-# ── He & Whitehill (2025) Tablo II Referans Degerleri ──────────────────────
-HE_WHITEHILL_REF = {
-    "AMI-SDM eval cpWER araliği": "21.2 — 24.9",
-    "AMI-IHM eval cpWER araliği": "14.9 — 28.4",
-}
+# ── Paths ────────────────────────────────────────────────────────────────────
+XML_DIR = r"C:\Users\merve\Downloads\ami_public_manual_1.6.2\words"
+AUDIO_PATH = r"data\ami\audio\ES2016d.Headset-0.wav"
+REFERENCE_PATH = r"data\ami\reference\ES2016d_SpeakerA.txt"
+LOCAL_PREDICTED_PATH = r"data\ami\results\local_predicted.txt"
+DEEPGRAM_PREDICTED_PATH = r"data\ami\results\deepgram_predicted.txt"
+
+# Groq API ayarları
+GROQ_API_URL = "https://api.groq.com/openai/v1/audio/transcriptions"
+GROQ_MODEL = os.getenv("AI_TRANSCRIBE_MODEL", "whisper-large-v3")
 
 
-def parse_ami_xmls(xml_dir: str, reference_out_path: str, speaker_id: str = None):
+def normalize_text(text: str) -> str:
+    """Normalize: lowercase, remove punctuation, collapse whitespace."""
+    text = text.lower()
+    text = re.sub(r'[^\w\s]', '', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+
+def _extract_audio_chunk(input_path: str, start_sec: float, end_sec: float) -> str:
+    """FFmpeg ile ses dosyasından chunk çıkar."""
+    temp_fd, temp_path = tempfile.mkstemp(suffix=".flac")
+    os.close(temp_fd)
+    cmd = [
+        "ffmpeg", "-ss", f"{start_sec:.4f}", "-t", f"{end_sec - start_sec:.4f}",
+        "-i", input_path, "-vn", "-ar", "16000", "-ac", "1",
+        "-c:a", "flac", "-y", temp_path,
+    ]
+    subprocess.run(cmd, capture_output=True, timeout=120, check=True)
+    return temp_path
+
+
+def _groq_transcribe_raw(audio_path: str, language: str = "en") -> str:
     """
-    Parses AMI words XML files, extracts words, sorts by time, and writes to a text file.
+    Groq Whisper API'ye doğrudan istek at.
+    Türkçe normalizer UYGULANMAZ — raw transcript döner.
     """
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        raise ValueError("GROQ_API_KEY tanımlı değil.")
+
+    max_retries = 5
+    for attempt in range(max_retries):
+        with open(audio_path, "rb") as f:
+            response = httpx.post(
+                GROQ_API_URL,
+                headers={"Authorization": f"Bearer {api_key}"},
+                data={
+                    "model": GROQ_MODEL,
+                    "language": language,
+                    "response_format": "json",
+                    "temperature": "0",
+                },
+                files=[("file", (Path(audio_path).name, f, "audio/flac"))],
+                timeout=180.0,
+            )
+
+        if response.status_code == 429:
+            wait = int(response.headers.get("retry-after", 2 ** attempt * 5))
+            print(f"   [Rate Limit] {wait}s bekleniyor (deneme {attempt+1}/{max_retries})...")
+            time.sleep(wait)
+            continue
+
+        response.raise_for_status()
+        return response.json().get("text", "").strip()
+
+    raise RuntimeError("Groq API rate limit aşılamadı.")
+
+
+def parse_ami_xmls(xml_dir: str, reference_out_path: str, speaker_id: str = None) -> str:
+    """AMI XML dosyalarını parse eder, referans metni oluşturur."""
     if not os.path.exists(xml_dir):
-        raise FileNotFoundError(f"XML dizini bulunamadi: {xml_dir}")
+        raise FileNotFoundError(f"XML dizini bulunamadı: {xml_dir}")
 
     if speaker_id:
-        files = [f for f in os.listdir(xml_dir) if f.endswith(f".{speaker_id}.words.xml") and f.startswith("ES2016d")]
+        files = [f for f in os.listdir(xml_dir)
+                 if f.endswith(f".{speaker_id}.words.xml") and f.startswith("ES2016d")]
     else:
-        files = [f for f in os.listdir(xml_dir) if f.endswith(".words.xml") and f.startswith("ES2016d")]
-        
+        files = [f for f in os.listdir(xml_dir)
+                 if f.endswith(".words.xml") and f.startswith("ES2016d")]
+
     if not files:
-        raise FileNotFoundError(f"XML dosyalari {xml_dir} dizininde bulunamadi.")
+        raise FileNotFoundError(f"XML dosyaları {xml_dir} dizininde bulunamadı.")
 
     word_entries = []
-
     for file_name in files:
         file_path = os.path.join(xml_dir, file_name)
         try:
@@ -72,100 +131,39 @@ def parse_ami_xmls(xml_dir: str, reference_out_path: str, speaker_id: str = None
                         start_time = 0.0
                     word_entries.append((start_time, text))
         except ET.ParseError as e:
-            print(f"Hata: {file_name} dosyasi parse edilemedi - {e}")
+            print(f"Hata: {file_name} dosyası parse edilemedi - {e}")
             continue
 
     if not word_entries:
-        print("Uyari: XML dosyalarindan hicbir kelime cikarilamadi!")
+        print("Uyarı: XML dosyalarından hiçbir kelime çıkarılamadı!")
         return ""
 
-    # Sort by starttime
     word_entries.sort(key=lambda x: x[0])
-    
-    # Combine text
     combined_text = " ".join([w[1] for w in word_entries])
-    
-    # Normalize
-    combined_text = combined_text.lower()
-    combined_text = re.sub(r'[^\w\s]', '', combined_text)
-    combined_text = re.sub(r'\s+', ' ', combined_text).strip()
-    
-    # Save to file
+    combined_text = normalize_text(combined_text)
+
     os.makedirs(os.path.dirname(reference_out_path), exist_ok=True)
     with open(reference_out_path, "w", encoding="utf-8") as f:
         f.write(combined_text)
-        
+
     return combined_text
 
 
-def parse_ami_xmls_per_speaker(xml_dir: str, meeting_prefix: str = "ES2016d"):
-    """
-    AMI XML dosyalarindan her konusmaci icin ayri referans metni cikar.
-    
-    Returns: dict[str, str] — { "A": "metin...", "B": "metin...", ... }
-    """
-    files = [f for f in os.listdir(xml_dir) if f.endswith(".words.xml") and f.startswith(meeting_prefix)]
-    
-    speaker_texts = {}
-    for file_name in files:
-        # Dosya adi formati: ES2016d.X.words.xml (X = konusmaci ID)
-        parts = file_name.replace(".words.xml", "").split(".")
-        if len(parts) >= 2:
-            speaker_id = parts[-1]  # Son kisim konusmaci ID
-        else:
-            continue
-            
-        file_path = os.path.join(xml_dir, file_name)
-        word_entries = []
-        try:
-            tree = ET.parse(file_path)
-            root = tree.getroot()
-            for w in root.iter("w"):
-                text = w.text
-                if text:
-                    start_time_str = w.attrib.get("starttime", "0.0")
-                    try:
-                        start_time = float(start_time_str)
-                    except ValueError:
-                        start_time = 0.0
-                    word_entries.append((start_time, text))
-        except ET.ParseError:
-            continue
-            
-        if word_entries:
-            word_entries.sort(key=lambda x: x[0])
-            combined = " ".join([w[1] for w in word_entries])
-            combined = normalize_text(combined)
-            speaker_texts[speaker_id] = combined
-    
-    return speaker_texts
-
-
-def normalize_text(text: str) -> str:
-    text = text.lower()
-    text = re.sub(r'[^\w\s]', '', text)
-    text = re.sub(r'\s+', ' ', text).strip()
-    return text
-
-
-def compute_error_decomposition(ref: str, hyp: str) -> dict:
-    """
-    WER, CER ve hata dekompozisyonu (Ins/Del/Sub) hesaplar.
-    He & Whitehill (2025) Tablo II ile kiyaslanabilir metrikler uretir.
-    """
+def compute_metrics(ref: str, hyp: str) -> dict:
+    """WER, CER ve hata dekompozisyonu hesaplar."""
     if not ref or not hyp:
         return {}
-    
+
     wer_score = jiwer.wer(ref, hyp)
     cer_score = jiwer.cer(ref, hyp)
     measures = jiwer.process_words(ref, hyp)
-    
+
     ins = measures.insertions
     dels = measures.deletions
     subs = measures.substitutions
     hits = measures.hits
     total_errors = ins + dels + subs
-    
+
     return {
         "wer": round(wer_score, 4),
         "cer": round(cer_score, 4),
@@ -182,185 +180,170 @@ def compute_error_decomposition(ref: str, hyp: str) -> dict:
     }
 
 
-def compute_cpwer(speaker_refs: dict, hypothesis: str) -> dict:
+def save_transcript(path: str, text: str):
+    """Transcript'i dosyaya kaydeder."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
+    print(f"   Kaydedildi: {path}")
+
+
+def transcribe_local(audio_path: str, duration: float) -> str:
     """
-    Concatenated minimum-Permutation Word Error Rate (cpWER).
-    
-    Tum konusmaci referanslarinin tum permutasyonlarini deneyerek
-    en dusuk WER'i veren siralama ile hesaplar.
-    
-    Bu yaklasim He & Whitehill (2025) Tablo II'deki cpWER metrigine
-    tekabul eder.
-    
-    Args:
-        speaker_refs: { "A": "ref metin", "B": "ref metin", ... }
-        hypothesis:   Whisper'in tek kanal transkripsiyon ciktisi
-    
-    Returns:
-        dict: cpWER sonuclari + en iyi permutasyon bilgisi
+    Groq Whisper API ile chunk'lar halinde transkripsiyon.
+    Türkçe normalizer BYPASS edilir — raw English transcript.
     """
-    if not speaker_refs or not hypothesis:
-        return {}
-    
-    hyp_norm = normalize_text(hypothesis)
-    speaker_ids = list(speaker_refs.keys())
-    ref_texts = [speaker_refs[sid] for sid in speaker_ids]
-    
-    best_wer = float("inf")
-    best_perm = None
-    best_concat_ref = None
-    
-    # Tum permutasyonlari dene (konusmaci sayisi genelde 4-5, maliyet dusuk)
-    for perm in itertools.permutations(range(len(ref_texts))):
-        concat_ref = " ".join(ref_texts[i] for i in perm)
-        w = jiwer.wer(concat_ref, hyp_norm)
-        if w < best_wer:
-            best_wer = w
-            best_perm = tuple(speaker_ids[i] for i in perm)
-            best_concat_ref = concat_ref
-    
-    # En iyi permutasyonla tam dekompozisyon
-    result = compute_error_decomposition(best_concat_ref, hyp_norm)
-    result["cpwer"] = round(best_wer, 4)
-    result["best_permutation"] = list(best_perm) if best_perm else []
-    result["n_permutations_tested"] = len(list(itertools.permutations(range(len(ref_texts)))))
-    
-    return result
+    chunk_size = 600  # 10 dakika
+    predicted_parts = []
+
+    for start_sec in range(0, int(duration), chunk_size):
+        end_sec = min(start_sec + chunk_size, duration)
+        print(f"   Chunk: {start_sec}s - {end_sec:.0f}s ...")
+
+        # Chunk çıkar
+        chunk_path = _extract_audio_chunk(audio_path, start_sec, end_sec)
+        try:
+            text = _groq_transcribe_raw(chunk_path, language="en")
+            if text:
+                predicted_parts.append(text)
+        finally:
+            if os.path.exists(chunk_path):
+                os.remove(chunk_path)
+
+    return " ".join(predicted_parts)
+
+
+def transcribe_deepgram(audio_path: str) -> str:
+    """Deepgram Nova-2 ile transkripsiyon."""
+    return transcribe_with_deepgram(audio_path, language="en")
+
+
+def print_results(label: str, metrics: dict):
+    """Sonuçları formatlı yazdır."""
+    print(f"\n{'=' * 60}")
+    print(f"  {label}")
+    print(f"{'=' * 60}")
+    print(f"  WER                : {metrics['wer']:.4f}  (%{metrics['wer']*100:.2f})")
+    print(f"  CER                : {metrics['cer']:.4f}  (%{metrics['cer']*100:.2f})")
+    print(f"-" * 60)
+    print(f"  Ref kelime sayısı  : {metrics['ref_words']}")
+    print(f"  Hyp kelime sayısı  : {metrics['hyp_words']}")
+    print(f"-" * 60)
+    print(f"  Insertions         : {metrics['insertions']:>6}  (%{metrics['insertion_ratio']*100:.1f})")
+    print(f"  Deletions          : {metrics['deletions']:>6}  (%{metrics['deletion_ratio']*100:.1f})")
+    print(f"  Substitutions      : {metrics['substitutions']:>6}  (%{metrics['substitution_ratio']*100:.1f})")
+    print(f"  Hits (Doğru)       : {metrics['hits']:>6}")
+    print(f"{'=' * 60}")
+
+
+def print_comparison(local_metrics: dict, deepgram_metrics: dict):
+    """İki sistemi yan yana karşılaştır."""
+    local_wer_str = f"%{local_metrics['wer']*100:.2f}"
+    deep_wer_str = f"%{deepgram_metrics['wer']*100:.2f}"
+    local_cer_str = f"%{local_metrics['cer']*100:.2f}"
+    deep_cer_str = f"%{deepgram_metrics['cer']*100:.2f}"
+
+    print(f"\n{'=' * 60}")
+    print("  KARŞILAŞTIRMA TABLOSU")
+    print("=" * 60)
+    print(f"  {'Metrik':<20} {'Faster-Whisper':>15} {'Deepgram Nova-2':>15}")
+    print(f"  {'-'*50}")
+    print(f"  {'WER':<20} {local_wer_str:>15} {deep_wer_str:>15}")
+    print(f"  {'CER':<20} {local_cer_str:>15} {deep_cer_str:>15}")
+    print(f"  {'Insertions':<20} {local_metrics['insertions']:>15} {deepgram_metrics['insertions']:>15}")
+    print(f"  {'Deletions':<20} {local_metrics['deletions']:>15} {deepgram_metrics['deletions']:>15}")
+    print(f"  {'Substitutions':<20} {local_metrics['substitutions']:>15} {deepgram_metrics['substitutions']:>15}")
+    print(f"  {'Hits':<20} {local_metrics['hits']:>15} {deepgram_metrics['hits']:>15}")
+    print(f"  {'Ref Words':<20} {local_metrics['ref_words']:>15} {deepgram_metrics['ref_words']:>15}")
+    print(f"  {'Hyp Words':<20} {local_metrics['hyp_words']:>15} {deepgram_metrics['hyp_words']:>15}")
+    print(f"  {'-'*50}")
+
+    # Hangi sistem daha iyi?
+    if local_metrics["wer"] < deepgram_metrics["wer"]:
+        winner = "Faster-Whisper"
+        diff = (deepgram_metrics["wer"] - local_metrics["wer"]) * 100
+    elif deepgram_metrics["wer"] < local_metrics["wer"]:
+        winner = "Deepgram Nova-2"
+        diff = (local_metrics["wer"] - deepgram_metrics["wer"]) * 100
+    else:
+        winner = "Eşit"
+        diff = 0.0
+
+    if winner != "Eşit":
+        print(f"  KAZANAN (WER)      : {winner} (fark: {diff:.2f} puan)")
+    else:
+        print("  SONUÇ              : İki sistem eşit WER değerine sahip")
+
+    print(f"{'=' * 60}")
 
 
 def main():
-    # Paths
-    xml_dir = r"C:\Users\merve\Downloads\ami_public_manual_1.6.2\words"
-    audio_path = r"data\ami\audio\ES2016d.Headset-0.wav"
-    reference_path = r"data\ami\reference\ES2016d_SpeakerA.txt"
-    results_path = r"data\ami\results\ES2016d_SpeakerA_predicted.txt"
+    print("=" * 60)
+    print("  AMI Corpus WER Benchmark")
+    print("  Faster-Whisper (Groq) vs Deepgram Nova-2")
+    print("=" * 60)
 
-    # 1. Parse XML and Generate Reference (Sadece Speaker A)
-    print("1. XML dosyalari parse ediliyor (Sadece Konusmaci A)...")
-    reference_text = parse_ami_xmls(xml_dir, reference_path, speaker_id="A")
+    # ── 1. Referans metin oluştur ────────────────────────────────────────
+    print("\n[1/5] XML dosyaları parse ediliyor (Speaker A referansı)...")
+    reference_text = parse_ami_xmls(XML_DIR, REFERENCE_PATH, speaker_id="A")
     if not reference_text:
-        print("Uyari: Bos referans transcript olustu.")
-
-    # 1b. Tum konusmacilari parse et (cpWER icin)
-    print("1b. Tum konusmaci referanslari parse ediliyor (cpWER icin)...")
-    all_speaker_refs = parse_ami_xmls_per_speaker(xml_dir)
-    if all_speaker_refs:
-        print(f"    Bulunan konusmacilar: {list(all_speaker_refs.keys())}")
-        for sid, txt in all_speaker_refs.items():
-            print(f"      {sid}: {len(txt.split())} kelime")
-
-    # 2. Check Audio File
-    if not os.path.exists(audio_path):
-        raise FileNotFoundError(f"Ses dosyasi bulunamadi: {audio_path}")
-
-    # 3. Get audio duration and transcribe in chunks
-    print("2. Ses dosyasi transcriber ile isleniyor (10 dakikalik parcalar halinde)...")
-    try:
-        # wav dosyasinin suresini bul
-        with wave.open(audio_path, 'rb') as wav_file:
-            frames = wav_file.getnframes()
-            rate = wav_file.getframerate()
-            duration = frames / float(rate)
-            
-        print(f"   Ses dosyasi suresi: {duration:.2f} saniye")
-        
-        chunk_size = 600  # 10 dakika (saniye)
-        predicted_parts = []
-        
-        for start_sec in range(0, int(duration), chunk_size):
-            end_sec = min(start_sec + chunk_size, duration)
-            print(f"   Islemiyor: {start_sec} - {end_sec:.2f} saniye arasi...")
-            
-            text = transcribe_audio_clip_text(
-                audio_path, 
-                start_sec=start_sec, 
-                end_sec=end_sec, 
-                language="en"
-            )
-            if text:
-                predicted_parts.append(text)
-                
-        predicted_text = " ".join(predicted_parts)
-        
-    except Exception as e:
-        print(f"Hata: Transcription basarisiz oldu: {e}")
+        print("HATA: Boş referans transcript!")
         return
+    print(f"   Referans: {len(reference_text.split())} kelime")
 
-    if not predicted_text:
-        print("Uyari: Transkripsiyon sonucu bos.")
+    # ── 2. Audio dosyasını kontrol et ────────────────────────────────────
+    if not os.path.exists(AUDIO_PATH):
+        raise FileNotFoundError(f"Ses dosyası bulunamadı: {AUDIO_PATH}")
 
-    # 4. Save predicted text
-    os.makedirs(os.path.dirname(results_path), exist_ok=True)
-    with open(results_path, "w", encoding="utf-8") as f:
-        f.write(predicted_text)
+    with wave.open(AUDIO_PATH, 'rb') as wav_file:
+        frames = wav_file.getnframes()
+        rate = wav_file.getframerate()
+        duration = frames / float(rate)
+    print(f"   Ses süresi: {duration:.2f} saniye ({duration/60:.1f} dakika)")
 
-    # 5. Standard WER (Sadece Speaker A referansi)
-    print("\n3. STANDARD WER hesaplaniyor (Sadece Konusmaci A)...")
-    predicted_norm = normalize_text(predicted_text)
-    
-    if reference_text and predicted_norm:
-        std_results = compute_error_decomposition(reference_text, predicted_norm)
-        
-        print("\n" + "=" * 70)
-        print(" STANDARD WER SONUCLARI (Tek Konusmaci Referansi)")
-        print("=" * 70)
-        print(f"  Referans kelime sayisi  : {std_results['ref_words']}")
-        print(f"  Tahmin kelime sayisi    : {std_results['hyp_words']}")
-        print(f"  WER                     : {std_results['wer']:.4f} (%{std_results['wer']*100:.2f})")
-        print(f"  CER                     : {std_results['cer']:.4f} (%{std_results['cer']*100:.2f})")
-        print("-" * 70)
-        print(f"  Insertions              : {std_results['insertions']:>6}  (%{std_results['insertion_ratio']*100:.1f})")
-        print(f"  Deletions               : {std_results['deletions']:>6}  (%{std_results['deletion_ratio']*100:.1f})")
-        print(f"  Substitutions           : {std_results['substitutions']:>6}  (%{std_results['substitution_ratio']*100:.1f})")
-        print(f"  Hits (Dogru)            : {std_results['hits']:>6}")
-        print("=" * 70)
-        
-        if std_results["insertion_ratio"] > 0.60:
-            print("  [!] YUKSEK INSERTION: Diger konusmacilarin sesi leakage olarak algilaniyor.")
-        
-    # 6. cpWER (Tum konusmaci referanslari)
-    if all_speaker_refs and predicted_norm:
-        print("\n4. cpWER hesaplaniyor (Tum konusmaci referanslari)...")
-        cpwer_results = compute_cpwer(all_speaker_refs, predicted_text)
-        
-        if cpwer_results:
-            print("\n" + "=" * 70)
-            print(" cpWER SONUCLARI (Concatenated min-Permutation WER)")
-            print("=" * 70)
-            print(f"  cpWER                   : {cpwer_results['cpwer']:.4f} (%{cpwer_results['cpwer']*100:.2f})")
-            print(f"  Test edilen permutasyon : {cpwer_results['n_permutations_tested']}")
-            print(f"  En iyi siralama         : {' -> '.join(cpwer_results['best_permutation'])}")
-            print("-" * 70)
-            print(f"  Insertions              : {cpwer_results['insertions']:>6}  (%{cpwer_results['insertion_ratio']*100:.1f})")
-            print(f"  Deletions               : {cpwer_results['deletions']:>6}  (%{cpwer_results['deletion_ratio']*100:.1f})")
-            print(f"  Substitutions           : {cpwer_results['substitutions']:>6}  (%{cpwer_results['substitution_ratio']*100:.1f})")
-            print("=" * 70)
-    
-    # 7. He & Whitehill Referans Kiyaslamasi
-    print("\n" + "=" * 70)
-    print(" He & Whitehill (2025) TABLO II REFERANS KIYASLAMASI")
-    print("=" * 70)
-    for label, val in HE_WHITEHILL_REF.items():
-        print(f"  {label}: {val}")
-    print("-" * 70)
-    
-    if reference_text and predicted_norm:
-        our_wer = std_results['wer'] * 100
-        print(f"  Bizim Standard WER (SDM, tek ref) : %{our_wer:.2f}")
-        print(f"  NOT: Standard WER, cpWER'den yuksektir cunku diger")
-        print(f"       konusmacilarin metinleri insertion hatasi olarak sayilir.")
-    
-    if all_speaker_refs and predicted_norm and cpwer_results:
-        our_cpwer = cpwer_results['cpwer'] * 100
-        print(f"  Bizim cpWER (SDM, tum ref)        : %{our_cpwer:.2f}")
-        if our_cpwer <= 24.9:
-            print(f"  [OK] AMI-SDM referans araliginda (21.2-24.9)")
-        elif our_cpwer <= 30.0:
-            print(f"  [~] AMI-SDM referans araligina yakin")
-        else:
-            print(f"  [!] AMI-SDM referans araliginin uzerinde")
-    
-    print("=" * 70)
+    # ── 3. Pipeline A: Whisper Raw (cache varsa oku) ─────────────────────
+    if os.path.exists(LOCAL_PREDICTED_PATH):
+        print("\n[2/5] Pipeline A: Cache'den okunuyor...")
+        with open(LOCAL_PREDICTED_PATH, "r", encoding="utf-8") as f:
+            raw_norm = f.read().strip()
+        raw_time = 0.0
+        print(f"   Cache: {len(raw_norm.split())} kelime")
+    else:
+        print("\n[2/5] Pipeline A: Whisper Raw transkripsiyon...")
+        t0 = time.time()
+        raw_text = transcribe_local(AUDIO_PATH, duration)
+        raw_time = time.time() - t0
+        raw_norm = normalize_text(raw_text)
+        save_transcript(LOCAL_PREDICTED_PATH, raw_norm)
+        print(f"   Süre: {raw_time:.1f}s | Kelime: {len(raw_norm.split())}")
+
+    local_metrics = compute_metrics(reference_text, raw_norm)
+
+    # ── 4. Deepgram transkripsiyon ───────────────────────────────────────
+    print("\n[3/5] Deepgram Nova-2 transkripsiyon yapılıyor...")
+    t0 = time.time()
+    deepgram_raw = transcribe_deepgram(AUDIO_PATH)
+    deepgram_time = time.time() - t0
+    deepgram_norm = normalize_text(deepgram_raw)
+    save_transcript(DEEPGRAM_PREDICTED_PATH, deepgram_norm)
+    print(f"   Süre: {deepgram_time:.1f}s | Kelime: {len(deepgram_norm.split())}")
+
+    deepgram_metrics = compute_metrics(reference_text, deepgram_norm)
+
+    # ── 5. Sonuçları yazdır ──────────────────────────────────────────────
+    print("\n[4/5] WER/CER hesaplanıyor...")
+
+    print("\n[5/5] Sonuçlar:")
+    print_results("FASTER-WHISPER (Groq Whisper-Large-V3)", local_metrics)
+    print_results("DEEPGRAM NOVA-2", deepgram_metrics)
+    print_comparison(local_metrics, deepgram_metrics)
+
+    # İşlem süreleri
+    print(f"\n  İşlem Süreleri:")
+    if raw_time > 0:
+        print(f"    Faster-Whisper : {raw_time:.1f} saniye")
+    print(f"    Deepgram       : {deepgram_time:.1f} saniye")
+
 
 if __name__ == "__main__":
     main()
