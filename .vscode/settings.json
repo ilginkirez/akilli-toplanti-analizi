@@ -1,0 +1,10 @@
+{
+    "python.analysis.extraPaths": [
+        "./meeting_analyzer",
+        "./meeting_analyzer/src"
+    ],
+    "python.autoComplete.extraPaths": [
+        "./meeting_analyzer",
+        "./meeting_analyzer/src"
+    ]
+}
