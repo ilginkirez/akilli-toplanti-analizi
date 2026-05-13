@@ -286,6 +286,7 @@ class AIAnalysisService:
         """Meeting ve session verilerinden katilimci listesi olusturur (user_id, name, email)."""
         participants: list[dict[str, Any]] = []
         seen_user_ids: set[str] = set()
+        seen_emails: set[str] = set()
 
         # Oncelikle meeting_store'dan katilimcilari al (user_id + email mevcut)
         meeting_id = session.get("meeting_id")
@@ -297,10 +298,12 @@ class AIAnalysisService:
                 org_name = organizer.get("name", "").strip()
                 org_email = organizer.get("email", "").strip()
                 if org_name and org_email:
-                    # meeting_participants tablosundaki user_id'yi ara
                     org_user_id = self._find_user_id_for_email(
                         org_email, meeting.get("participants", [])
                     )
+                    # meeting_participants'ta user_id yoksa user_store'dan ara
+                    if not org_user_id:
+                        org_user_id = self._lookup_user_id_by_email(org_email)
                     if org_user_id:
                         participants.append({
                             "user_id": org_user_id,
@@ -308,19 +311,30 @@ class AIAnalysisService:
                             "email": org_email,
                         })
                         seen_user_ids.add(org_user_id)
+                        seen_emails.add(org_email.lower())
 
                 # Meeting katilimcilarini ekle
                 for mp in meeting.get("participants", []):
                     user_id = mp.get("user_id")
                     name = mp.get("name", "").strip()
                     email = mp.get("email", "").strip()
-                    if user_id and user_id not in seen_user_ids and name:
-                        participants.append({
-                            "user_id": user_id,
-                            "name": name,
-                            "email": email,
-                        })
-                        seen_user_ids.add(user_id)
+                    # user_id yoksa user_store'dan email ile ara
+                    if not user_id and email:
+                        user_id = self._lookup_user_id_by_email(email)
+                    if not user_id or not name:
+                        continue
+                    if user_id in seen_user_ids:
+                        continue
+                    if email.lower() in seen_emails:
+                        continue
+                    participants.append({
+                        "user_id": user_id,
+                        "name": name,
+                        "email": email,
+                    })
+                    seen_user_ids.add(user_id)
+                    if email:
+                        seen_emails.add(email.lower())
 
         logger.debug(
             "[session_id=%s] Meeting katilimcilari toplandi: %d kisi",
@@ -338,7 +352,25 @@ class AIAnalysisService:
         email_lower = email.strip().lower()
         for p in participants:
             if (p.get("email") or "").strip().lower() == email_lower:
-                return p.get("user_id")
+                uid = p.get("user_id")
+                if uid:
+                    return uid
+        return None
+
+    @staticmethod
+    def _lookup_user_id_by_email(email: str) -> str | None:
+        """user_store'dan email ile user_id arar (fallback)."""
+        try:
+            from .user_store import user_store
+            with user_store._lock, user_store._connect() as conn:
+                row = conn.execute(
+                    "SELECT id FROM users WHERE email = ? AND status = 'active'",
+                    (email.strip().lower(),),
+                ).fetchone()
+                if row:
+                    return row["id"]
+        except Exception:
+            logger.debug("user_store email lookup basarisiz: email=%s", email)
         return None
 
     def _resolve_meeting_date(self, session: dict[str, Any]) -> str:
