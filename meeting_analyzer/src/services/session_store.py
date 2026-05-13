@@ -225,7 +225,7 @@ class SessionStore:
                 "stream_ids": [],
                 "join_time": _utc_now_iso(),
                 "leave_time": None,
-                "active": True,
+                "active": False,
                 "device_type": "unknown",
                 "browser": "unknown",
                 "os": "unknown",
@@ -247,7 +247,7 @@ class SessionStore:
         participant.update(
             {
                 "display_name": display_name,
-                "active": True,
+                "active": participant.get("active", False),
                 "leave_time": None,
             }
         )

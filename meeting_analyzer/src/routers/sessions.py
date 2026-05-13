@@ -97,16 +97,6 @@ async def create_token(request_data: Dict[str, Any]):
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-    connection_id = participant_id
-    session_store.attach_connection(
-        session_id=session_id,
-        participant_id=participant_id,
-        connection_id=connection_id,
-        server_data=server_data,
-        client_data={"display_name": display_name},
-    )
-    _persist_session_metadata(session_id)
-
     recording_state = session_store.load_session(session_id)["recording"]
     if not recording_state.get("started_at"):
         session_store.update_recording(

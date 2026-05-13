@@ -51,6 +51,8 @@ def transcribe_local_faster_whisper(
     language: str = "en",
     beam_size: int = 5,
     use_prompt: bool = True,
+    log_prefix: str | None = None,
+    segment_log_every: int = 0,
 ) -> str:
     """
     Lokal Faster-Whisper ile transkripsiyon.
@@ -61,6 +63,9 @@ def transcribe_local_faster_whisper(
     - vad_filter: True → sessiz kısımları filtreler, hallucination azalır
     - initial_prompt: Bağlam bilgisi → teknik kelime doğruluğu artar
     """
+    if log_prefix:
+        print(f"[TRANSCRIBE] Starting {audio_path}", flush=True)
+
     segments, info = model.transcribe(
         audio_path,
         language=language,
@@ -78,8 +83,22 @@ def transcribe_local_faster_whisper(
 
     # segments generator olduğu için transkripsiyon burada çalışır
     texts = []
-    for segment in segments:
+    start_time = time.perf_counter()
+    for i, segment in enumerate(segments):
         texts.append(segment.text.strip())
+        if log_prefix and segment_log_every > 0 and i % segment_log_every == 0:
+            print(
+                f"[SEGMENT] {log_prefix} segment={i}, "
+                f"time={segment.start:.1f}-{segment.end:.1f}",
+                flush=True,
+            )
+
+    if log_prefix:
+        elapsed = time.perf_counter() - start_time
+        print(
+            f"[DONE] {Path(audio_path).name} transcribed in {elapsed:.1f} sec",
+            flush=True,
+        )
 
     return " ".join(texts)
 
