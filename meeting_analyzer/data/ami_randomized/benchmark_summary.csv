@@ -1,0 +1,4 @@
+method,corpus_wer,insertions,deletions,substitutions,hits,ref_words,total_time_sec,n_meetings,seed,meetings
+Local_Beam5_PromptON,0.2941,672,1229,351,6078,7658,3145.04,5,42,"ES2002b,ES2003d,ES2006b,ES2012a,ES2013d"
+Local_Beam5_PromptOFF,0.2907,662,1225,339,6094,7658,3953.56,5,42,"ES2002b,ES2003d,ES2006b,ES2012a,ES2013d"
+Deepgram_Nova2,0.175,264,709,367,6582,7658,154.4,5,42,"ES2002b,ES2003d,ES2006b,ES2012a,ES2013d"

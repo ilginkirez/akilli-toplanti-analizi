@@ -12,7 +12,13 @@ sys.path.insert(0, str(PROJECT_ROOT))
 class FakeLLM:
     model = "fake-groq-model"
 
-    def complete_json(self, *, system_prompt: str, user_prompt: str, temperature: float = 0.1):
+    def complete_json(
+        self,
+        *,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float = 0.1,
+    ):
         if "aksiyon maddesi" in system_prompt:
             return {
                 "action_items": [
@@ -44,6 +50,9 @@ def test_session_store_defaults_include_ai_analysis(tmp_path):
     assert session["ai_analysis"]["status"] == "pending"
     assert session["ai_analysis"]["provider"] == "groq"
     assert session["ai_analysis"]["transcript_path"] is None
+    assert session["ai_analysis"]["notifications_sent"] == []
+    assert session["ai_analysis"]["notification_status"] is None
+    assert session["ai_analysis"]["notification_fingerprint"] is None
 
 
 def test_ai_analysis_service_persists_transcript_and_summary(tmp_path, monkeypatch):
@@ -58,10 +67,17 @@ def test_ai_analysis_service_persists_transcript_and_summary(tmp_path, monkeypat
 
     monkeypatch.setattr(ai_analysis_module, "session_store", store)
     monkeypatch.setattr(ai_analysis_module, "meeting_store", meetings)
+    monkeypatch.setattr(ai_analysis_module, "notify_assignees", lambda **kwargs: [])
 
     transcribe_calls: list[str] = []
 
-    def fake_transcribe(filepath: str, *, language: str, speaker: str, participant_id: str | None, offset_sec: float):
+    def fake_transcribe(
+        filepath: str,
+        *,
+        speaker: str,
+        participant_id: str | None,
+        offset_sec: float,
+    ):
         transcribe_calls.append(filepath)
         return [
             {
@@ -116,6 +132,9 @@ def test_ai_analysis_service_persists_transcript_and_summary(tmp_path, monkeypat
     assert result["key_decisions"] == ["Demo sunumu hazirlanacak"]
     assert result["topics"] == ["Urun demosu", "Teslim tarihi"]
     assert result["action_items"][0]["title"] == "Demo sunumunu hazirla"
+    assert result["notifications_sent"] == []
+    assert result["notification_status"] == "skipped"
+    assert "notification_agent" in result["completed"]
     assert transcribe_calls == [str(audio_path)]
 
     transcript_file = recordings_root / result["transcript_path"]
@@ -132,6 +151,7 @@ def test_ai_analysis_service_persists_transcript_and_summary(tmp_path, monkeypat
     saved = store.load_session(session_id)
     assert saved["ai_analysis"]["status"] == "ready"
     assert saved["ai_analysis"]["transcript_path"] == result["transcript_path"]
+    assert saved["ai_analysis"]["notification_status"] == "skipped"
 
     cached = service.analyze_session(session_id)
     assert cached["generated_at"] == result["generated_at"]
@@ -163,151 +183,74 @@ def test_ai_analysis_service_marks_failed_when_no_audio_source(tmp_path, monkeyp
     assert "uygun ses kaydi" in saved["ai_analysis"]["error"]
 
 
-def test_ai_analysis_service_uses_local_speech_timeline_when_available(tmp_path, monkeypatch):
+def test_notify_action_items_skips_duplicate_notifications(tmp_path, monkeypatch):
     from src.services.meeting_store import MeetingStore
     from src.services.session_store import SessionStore
     import src.services.ai_analysis_service as ai_analysis_module
 
-    storage_root = tmp_path / "storage"
-    recordings_root = tmp_path / "recordings"
-    store = SessionStore(str(storage_root), str(recordings_root))
+    store = SessionStore(str(tmp_path / "storage"), str(tmp_path / "recordings"))
     meetings = MeetingStore(str(tmp_path / "meetings.db"))
-
     monkeypatch.setattr(ai_analysis_module, "session_store", store)
     monkeypatch.setattr(ai_analysis_module, "meeting_store", meetings)
 
-    clip_calls: list[tuple[str, float, float]] = []
-
-    def fake_transcribe_clip(
-        filepath: str,
-        *,
-        start_sec: float,
-        end_sec: float,
-        language: str,
-        pad_start_sec: float,
-        pad_end_sec: float,
-    ) -> str:
-        clip_calls.append((filepath, round(start_sec, 2), round(end_sec, 2)))
-        if start_sec < 2.0:
-            return "Ayse ilk konusma bolumu."
-        return "Mehmet ikinci konusma bolumu."
-
-    monkeypatch.setattr(ai_analysis_module, "transcribe_audio_clip_text", fake_transcribe_clip)
-
-    def fail_whole_file(*args, **kwargs):
-        raise AssertionError("whole-file transcription fallback should not be used")
-
-    monkeypatch.setattr(ai_analysis_module, "transcribe_audio_segments", fail_whole_file)
-
-    session_id = "session-ai-local-timeline"
-    audio_dir = recordings_root / session_id / "individual"
-    audio_dir.mkdir(parents=True, exist_ok=True)
-    ayse_path = audio_dir / "ayse.wav"
-    mehmet_path = audio_dir / "mehmet.wav"
-    ayse_path.write_bytes(b"fake audio")
-    mehmet_path.write_bytes(b"fake audio")
-
-    session = store.ensure_session(session_id)
-    session["participants"] = [
-        {
-            "participant_id": "par_ayse",
-            "display_name": "Ayse",
-            "recording_files": [
-                {
-                    "file_path": f"{session_id}/individual/ayse.wav",
-                    "has_audio": True,
-                    "start_time_offset_ms": 0,
-                    "recorded_started_at": "2026-04-21T09:00:00+00:00",
-                    "recorded_ended_at": "2026-04-21T09:00:04+00:00",
-                }
-            ],
-        },
-        {
-            "participant_id": "par_mehmet",
-            "display_name": "Mehmet",
-            "recording_files": [
-                {
-                    "file_path": f"{session_id}/individual/mehmet.wav",
-                    "has_audio": True,
-                    "start_time_offset_ms": 0,
-                    "recorded_started_at": "2026-04-21T09:00:00+00:00",
-                    "recorded_ended_at": "2026-04-21T09:00:04+00:00",
-                }
-            ],
-        },
-    ]
-    session["speech_analysis"] = {
-        **session["speech_analysis"],
-        "status": "ready",
-        "generated_at": "2026-04-21T09:05:00+00:00",
-        "segments": [
-            {
-                "segment_id": 1,
-                "type": "single",
-                "start_sec": 0.0,
-                "end_sec": 0.8,
-                "participants": [{"participant_id": "par_ayse", "display_name": "Ayse"}],
-                "participant_id": "par_ayse",
-                "display_name": "Ayse",
-            },
-            {
-                "segment_id": 2,
-                "type": "single",
-                "start_sec": 0.95,
-                "end_sec": 1.4,
-                "participants": [{"participant_id": "par_ayse", "display_name": "Ayse"}],
-                "participant_id": "par_ayse",
-                "display_name": "Ayse",
-            },
-            {
-                "segment_id": 3,
-                "type": "single",
-                "start_sec": 2.2,
-                "end_sec": 3.0,
-                "participants": [{"participant_id": "par_mehmet", "display_name": "Mehmet"}],
-                "participant_id": "par_mehmet",
-                "display_name": "Mehmet",
-            },
-        ],
-    }
-    store.save_session(session_id, session)
+    send_calls: list[dict[str, object]] = []
+    monkeypatch.setattr(
+        ai_analysis_module,
+        "notify_assignees",
+        lambda **kwargs: send_calls.append(kwargs) or [],
+    )
 
     service = ai_analysis_module.AIAnalysisService(
-        recordings_dir=str(recordings_root),
+        recordings_dir=str(tmp_path / "recordings"),
         llm=FakeLLM(),
     )
 
-    result = service.analyze_session(session_id)
-
-    assert result["status"] == "ready"
-    assert clip_calls == [
-        (str(ayse_path), 0.0, 1.4),
-        (str(mehmet_path), 2.2, 3.0),
-    ]
-
-    transcript_file = recordings_root / result["transcript_path"]
-    transcript_payload = json.loads(transcript_file.read_text(encoding="utf-8"))
-
-    assert transcript_payload["segments"] == [
+    session_id = "session-ai-duplicate"
+    action_items = [
         {
-            "speaker": "Ayse",
-            "participant_id": "par_ayse",
-            "start": 0.0,
-            "end": 1.4,
-            "text": "Ayse ilk konusma bolumu.",
-            "source_segment_ids": [1, 2],
-        },
-        {
-            "speaker": "Mehmet",
-            "participant_id": "par_mehmet",
-            "start": 2.2,
-            "end": 3.0,
-            "text": "Mehmet ikinci konusma bolumu.",
-            "source_segment_ids": [3],
-        },
+            "task": "Sunumu hazirla",
+            "assigned_to_user_id": "usr-ayse",
+            "due_date": "2026-04-30",
+            "priority": "high",
+            "needs_review": False,
+            "ambiguous": False,
+        }
     ]
-    assert "[Ayse | 00:00:00 - 00:00:01]" in transcript_payload["full_text"]
-    assert "[Mehmet | 00:00:02 - 00:00:03]" in transcript_payload["full_text"]
+    meeting_participants = [
+        {
+            "user_id": "usr-ayse",
+            "name": "Ayse",
+            "email": "ayse@example.com",
+        }
+    ]
+    previous_notifications = [
+        {
+            "user_id": "usr-ayse",
+            "email": "ayse@example.com",
+            "name": "Ayse",
+            "tasks_count": 1,
+        }
+    ]
+    fingerprint = service._notification_fingerprint(
+        action_items=action_items,
+        meeting_participants=meeting_participants,
+    )
+
+    session = store.ensure_session(session_id)
+    session["ai_analysis"]["notification_fingerprint"] = fingerprint
+    session["ai_analysis"]["notifications_sent"] = previous_notifications
+    store.save_session(session_id, session)
+
+    result = service._notify_action_items(
+        session_id=session_id,
+        action_items=action_items,
+        meeting_participants=meeting_participants,
+    )
+
+    assert result["notification_status"] == "skipped_duplicate"
+    assert result["notifications_sent"] == previous_notifications
+    assert result["notification_fingerprint"] == fingerprint
+    assert send_calls == []
 
 
 def test_ai_analysis_service_runs_langgraph_pipeline(tmp_path, monkeypatch):
@@ -336,27 +279,20 @@ def test_ai_analysis_service_runs_langgraph_pipeline(tmp_path, monkeypatch):
     )
     monkeypatch.setattr(
         service,
-        "_summarize_meeting",
-        lambda transcript, segments: {
-            "executiveSummary": "Kisa ozet",
-            "keyDecisions": ["Karar"],
-            "topics": ["Konu"],
+        "_notify_action_items",
+        lambda **kwargs: {
+            "notifications_sent": [
+                {
+                    "user_id": "usr-ayse",
+                    "email": "ayse@example.com",
+                    "name": "Ayse",
+                    "tasks_count": 1,
+                }
+            ],
+            "notification_status": "sent",
+            "notification_error": None,
+            "notification_fingerprint": "fp-1",
         },
-    )
-    monkeypatch.setattr(
-        service,
-        "_extract_tasks",
-        lambda transcript, segments, meeting_date: [
-            {
-                "task": "Sunumu hazirla",
-                "assignee": "Ayse",
-                "due_date": "",
-                "priority": "high",
-                "confidence": 0.8,
-                "type": "direct",
-                "needs_review": False,
-            }
-        ],
     )
 
     state = service._run_analysis_graph(
@@ -364,10 +300,21 @@ def test_ai_analysis_service_runs_langgraph_pipeline(tmp_path, monkeypatch):
         session={"meeting_id": "m-graph"},
         sources=[],
         meeting_date="2026-04-24",
+        meeting_participants=[
+            {"user_id": "usr-ayse", "name": "Ayse", "email": "ayse@example.com"}
+        ],
     )
 
     assert state["full_text"] == "Merhaba"
-    assert state["summary_result"]["executiveSummary"] == "Kisa ozet"
-    assert state["action_items"][0]["task"] == "Sunumu hazirla"
-    assert state["summary_output"].executiveSummary == "Kisa ozet"
-    assert state["summary_output"].actionItems[0].title == "Sunumu hazirla"
+    assert (
+        state["summary_result"]["executiveSummary"]
+        == "Toplantida urun demosu ve teslim tarihi ele alindi."
+    )
+    assert state["action_items"][0]["task"] == "Demo sunumunu hazirla"
+    assert state["summary_output"].executiveSummary == (
+        "Toplantida urun demosu ve teslim tarihi ele alindi."
+    )
+    assert state["summary_output"].actionItems[0].title == "Demo sunumunu hazirla"
+    assert state["notification_status"] == "sent"
+    assert state["notification_fingerprint"] == "fp-1"
+    assert state["notifications_sent"][0]["user_id"] == "usr-ayse"

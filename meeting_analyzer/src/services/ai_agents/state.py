@@ -14,3 +14,7 @@ class MeetingAnalysisState(TypedDict, total=False):
     action_items: list[dict[str, Any]]
     meeting_participants: list[dict[str, Any]]
     summary_output: MeetingSummaryOutput
+    notifications_sent: list[dict[str, Any]]
+    notification_status: str
+    notification_error: str | None
+    notification_fingerprint: str | None

@@ -38,6 +38,7 @@ def _pick_extension(upload: UploadFile, mime_type: str) -> str:
 
 async def _run_analysis_if_ready(session_id: str) -> None:
     session = session_store.load_session(session_id)
+    session_finished = session.get("status") == "ended" or bool(session.get("finalized_at"))
     has_tracks = any(
         participant.get("recording_files")
         for participant in session.get("participants", [])
@@ -46,7 +47,7 @@ async def _run_analysis_if_ready(session_id: str) -> None:
         participant.get("active")
         for participant in session.get("participants", [])
     )
-    if not has_tracks or has_active_participants:
+    if not has_tracks or (has_active_participants and not session_finished):
         return
 
     try:

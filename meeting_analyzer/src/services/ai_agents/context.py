@@ -8,5 +8,12 @@ class AnalysisAgentService(Protocol):
         sources: list[Any],
     ) -> tuple[list[dict[str, Any]], str]: ...
 
-    def _llm(self) -> Any: ...
+    def _notify_action_items(
+        self,
+        *,
+        session_id: str,
+        action_items: list[dict[str, Any]],
+        meeting_participants: list[dict[str, Any]],
+    ) -> dict[str, Any]: ...
 
+    def _llm(self) -> Any: ...
