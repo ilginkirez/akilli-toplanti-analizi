@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import hashlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -173,11 +174,17 @@ class AIAnalysisService:
                     item.model_dump(mode="json")
                     for item in summary_output.actionItems
                 ],
+                "notifications_sent": graph_state.get("notifications_sent") or [],
+                "notification_status": graph_state.get("notification_status"),
+                "notification_error": graph_state.get("notification_error"),
+                "notification_fingerprint": graph_state.get("notification_fingerprint"),
                 "error": None,
                 "completed": [
                     "transcription_agent",
                     "summary_agent",
                     "action_item_agent",
+                    "finalize_analysis",
+                    "notification_agent",
                 ],
             }
             session_store.update_ai_analysis(session_id, payload)
@@ -187,32 +194,6 @@ class AIAnalysisService:
                 len(transcript_segments),
                 len(summary_output.actionItems),
             )
-
-            # Gorev bildirimleri gonder (hata olursa analiz sonucunu bozma)
-            try:
-                dashboard_url = os.getenv("DASHBOARD_URL", "").strip()
-                meeting = meeting_store.get_by_session_id(session_id)
-                if dashboard_url and meeting:
-                    dashboard_url = f"{dashboard_url}/meetings/{meeting['id']}"
-                elif not meeting:
-                    dashboard_url = None
-
-                notifications_sent = notify_assignees(
-                    action_items=graph_state.get("action_items") or [],
-                    meeting_participants=meeting_participants,
-                    dashboard_url=dashboard_url or None,
-                )
-                payload["notifications_sent"] = notifications_sent
-                session_store.update_ai_analysis(
-                    session_id, {"notifications_sent": notifications_sent}
-                )
-            except Exception:
-                logger.warning(
-                    "[session_id=%s] Gorev bildirimi gonderilemedi, analiz sonucu etkilenmedi.",
-                    session_id,
-                    exc_info=True,
-                )
-                payload["notifications_sent"] = []
 
             return payload
         except (AIAnalysisError, LLMError, TranscriptionError, FileNotFoundError) as exc:
@@ -434,6 +415,120 @@ class AIAnalysisService:
                 lines.append(f"[{speaker}]: {text}")
         full_text = "\n".join(lines)
         return all_items, full_text
+
+    def _notify_action_items(
+        self,
+        *,
+        session_id: str,
+        action_items: list[dict[str, Any]],
+        meeting_participants: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        if not action_items:
+            return {
+                "notifications_sent": [],
+                "notification_status": "skipped",
+                "notification_error": None,
+                "notification_fingerprint": None,
+            }
+
+        fingerprint = self._notification_fingerprint(
+            action_items=action_items,
+            meeting_participants=meeting_participants,
+        )
+        existing_analysis = session_store.load_session(session_id).get("ai_analysis", {})
+        existing_notifications = existing_analysis.get("notifications_sent") or []
+        if (
+            fingerprint
+            and existing_analysis.get("notification_fingerprint") == fingerprint
+            and existing_notifications
+        ):
+            logger.info(
+                "[session_id=%s] Bildirimler tekrar gonderilmedi; ayni fingerprint daha once islenmis.",
+                session_id,
+            )
+            return {
+                "notifications_sent": existing_notifications,
+                "notification_status": "skipped_duplicate",
+                "notification_error": None,
+                "notification_fingerprint": fingerprint,
+            }
+
+        try:
+            dashboard_url = os.getenv("DASHBOARD_URL", "").strip().rstrip("/")
+            meeting = meeting_store.get_by_session_id(session_id)
+            if dashboard_url and meeting:
+                dashboard_url = f"{dashboard_url}/meetings/{meeting['id']}"
+            else:
+                dashboard_url = None
+
+            notifications_sent = notify_assignees(
+                action_items=action_items,
+                meeting_participants=meeting_participants,
+                dashboard_url=dashboard_url,
+            )
+            return {
+                "notifications_sent": notifications_sent,
+                "notification_status": "sent" if notifications_sent else "skipped",
+                "notification_error": None,
+                "notification_fingerprint": fingerprint,
+            }
+        except Exception as exc:
+            logger.warning(
+                "[session_id=%s] Gorev bildirimi gonderilemedi, analiz sonucu etkilenmedi.",
+                session_id,
+                exc_info=True,
+            )
+            return {
+                "notifications_sent": [],
+                "notification_status": "failed",
+                "notification_error": str(exc),
+                "notification_fingerprint": fingerprint,
+            }
+
+    @staticmethod
+    def _notification_fingerprint(
+        *,
+        action_items: list[dict[str, Any]],
+        meeting_participants: list[dict[str, Any]],
+    ) -> str | None:
+        if not action_items:
+            return None
+
+        recipients = {
+            str(item.get("user_id")): {
+                "name": str(item.get("name") or "").strip(),
+                "email": str(item.get("email") or "").strip().lower(),
+            }
+            for item in meeting_participants
+            if item.get("user_id")
+        }
+
+        fingerprint_items: list[dict[str, Any]] = []
+        for item in action_items:
+            assignee_id = item.get("assigned_to_user_id")
+            recipient = recipients.get(str(assignee_id), {}) if assignee_id else {}
+            fingerprint_items.append(
+                {
+                    "task": str(item.get("task") or item.get("title") or "").strip(),
+                    "assigned_to_user_id": assignee_id,
+                    "due_date": str(item.get("due_date") or "").strip(),
+                    "priority": str(item.get("priority") or "").strip(),
+                    "needs_review": bool(item.get("needs_review", False)),
+                    "ambiguous": bool(item.get("ambiguous", False)),
+                    "recipient_email": recipient.get("email", ""),
+                    "recipient_name": recipient.get("name", ""),
+                }
+            )
+
+        fingerprint_items.sort(
+            key=lambda item: (
+                str(item.get("assigned_to_user_id") or ""),
+                str(item.get("task") or ""),
+                str(item.get("due_date") or ""),
+            )
+        )
+        payload = json.dumps(fingerprint_items, ensure_ascii=False, sort_keys=True)
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     def _model_name(self) -> str:
         if self.llm is not None:
