@@ -1,0 +1,16 @@
+[
+    {
+        "model": "Azure Speech",
+        "wer": 0.3638,
+        "cer": 0.294,
+        "insertions": 32,
+        "deletions": 401,
+        "substitutions": 81,
+        "hits": 931,
+        "time": 225.19,
+        "rtf": 0.1478,
+        "duration": 1523.253375,
+        "status": "success",
+        "error": null
+    }
+]

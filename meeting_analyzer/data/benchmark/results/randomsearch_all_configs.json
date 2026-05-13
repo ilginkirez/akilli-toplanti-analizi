@@ -1,0 +1,416 @@
+[
+  {
+    "config_idx": 0,
+    "config": {
+      "profanity": "raw",
+      "language": "en-US",
+      "format": "simple",
+      "endpoint": "conversation"
+    },
+    "avg_wer": 0.1309,
+    "avg_cer": 0.0714,
+    "std_wer": 0.0511,
+    "n_success": 4,
+    "n_errors": 1,
+    "wer_scores": [
+      0.1667,
+      0.05,
+      0.125,
+      0.1818
+    ],
+    "cer_scores": [
+      0.069,
+      0.0303,
+      0.039,
+      0.1475
+    ]
+  },
+  {
+    "config_idx": 1,
+    "config": {
+      "profanity": "masked",
+      "language": "en-US",
+      "format": "simple",
+      "endpoint": "conversation"
+    },
+    "avg_wer": 0.1201,
+    "avg_cer": 0.0674,
+    "std_wer": 0.0506,
+    "n_success": 5,
+    "n_errors": 0,
+    "wer_scores": [
+      0.1667,
+      0.05,
+      0.125,
+      0.1818,
+      0.0769
+    ],
+    "cer_scores": [
+      0.069,
+      0.0303,
+      0.039,
+      0.1475,
+      0.0513
+    ]
+  },
+  {
+    "config_idx": 2,
+    "config": {
+      "profanity": "masked",
+      "language": "en-US",
+      "format": "detailed",
+      "endpoint": "conversation"
+    },
+    "avg_wer": 0.1201,
+    "avg_cer": 0.0674,
+    "std_wer": 0.0506,
+    "n_success": 5,
+    "n_errors": 0,
+    "wer_scores": [
+      0.1667,
+      0.05,
+      0.125,
+      0.1818,
+      0.0769
+    ],
+    "cer_scores": [
+      0.069,
+      0.0303,
+      0.039,
+      0.1475,
+      0.0513
+    ]
+  },
+  {
+    "config_idx": 3,
+    "config": {
+      "profanity": "raw",
+      "language": "en-GB",
+      "format": "detailed",
+      "endpoint": "dictation"
+    },
+    "avg_wer": 0.0894,
+    "avg_cer": 0.0484,
+    "std_wer": 0.041,
+    "n_success": 5,
+    "n_errors": 0,
+    "wer_scores": [
+      0.1667,
+      0.05,
+      0.0625,
+      0.0909,
+      0.0769
+    ],
+    "cer_scores": [
+      0.069,
+      0.0303,
+      0.026,
+      0.0656,
+      0.0513
+    ]
+  },
+  {
+    "config_idx": 4,
+    "config": {
+      "profanity": "masked",
+      "language": "en-US",
+      "format": "detailed",
+      "endpoint": "dictation"
+    },
+    "avg_wer": 0.1201,
+    "avg_cer": 0.0674,
+    "std_wer": 0.0506,
+    "n_success": 5,
+    "n_errors": 0,
+    "wer_scores": [
+      0.1667,
+      0.05,
+      0.125,
+      0.1818,
+      0.0769
+    ],
+    "cer_scores": [
+      0.069,
+      0.0303,
+      0.039,
+      0.1475,
+      0.0513
+    ]
+  },
+  {
+    "config_idx": 5,
+    "config": {
+      "profanity": "masked",
+      "language": "en-GB",
+      "format": "simple",
+      "endpoint": "dictation"
+    },
+    "avg_wer": 0.0894,
+    "avg_cer": 0.0484,
+    "std_wer": 0.041,
+    "n_success": 5,
+    "n_errors": 0,
+    "wer_scores": [
+      0.1667,
+      0.05,
+      0.0625,
+      0.0909,
+      0.0769
+    ],
+    "cer_scores": [
+      0.069,
+      0.0303,
+      0.026,
+      0.0656,
+      0.0513
+    ]
+  },
+  {
+    "config_idx": 6,
+    "config": {
+      "profanity": "raw",
+      "language": "en-US",
+      "format": "simple",
+      "endpoint": "dictation"
+    },
+    "avg_wer": 0.1201,
+    "avg_cer": 0.0674,
+    "std_wer": 0.0506,
+    "n_success": 5,
+    "n_errors": 0,
+    "wer_scores": [
+      0.1667,
+      0.05,
+      0.125,
+      0.1818,
+      0.0769
+    ],
+    "cer_scores": [
+      0.069,
+      0.0303,
+      0.039,
+      0.1475,
+      0.0513
+    ]
+  },
+  {
+    "config_idx": 7,
+    "config": {
+      "profanity": "masked",
+      "language": "en-US",
+      "format": "simple",
+      "endpoint": "dictation"
+    },
+    "avg_wer": 0.1201,
+    "avg_cer": 0.0674,
+    "std_wer": 0.0506,
+    "n_success": 5,
+    "n_errors": 0,
+    "wer_scores": [
+      0.1667,
+      0.05,
+      0.125,
+      0.1818,
+      0.0769
+    ],
+    "cer_scores": [
+      0.069,
+      0.0303,
+      0.039,
+      0.1475,
+      0.0513
+    ]
+  },
+  {
+    "config_idx": 8,
+    "config": {
+      "profanity": "raw",
+      "language": "en-GB",
+      "format": "simple",
+      "endpoint": "conversation"
+    },
+    "avg_wer": 0.0894,
+    "avg_cer": 0.0484,
+    "std_wer": 0.041,
+    "n_success": 5,
+    "n_errors": 0,
+    "wer_scores": [
+      0.1667,
+      0.05,
+      0.0625,
+      0.0909,
+      0.0769
+    ],
+    "cer_scores": [
+      0.069,
+      0.0303,
+      0.026,
+      0.0656,
+      0.0513
+    ]
+  },
+  {
+    "config_idx": 9,
+    "config": {
+      "profanity": "masked",
+      "language": "en-GB",
+      "format": "detailed",
+      "endpoint": "dictation"
+    },
+    "avg_wer": 0.0992,
+    "avg_cer": 0.0529,
+    "std_wer": 0.0402,
+    "n_success": 4,
+    "n_errors": 1,
+    "wer_scores": [
+      0.1667,
+      0.0625,
+      0.0909,
+      0.0769
+    ],
+    "cer_scores": [
+      0.069,
+      0.026,
+      0.0656,
+      0.0513
+    ]
+  },
+  {
+    "config_idx": 10,
+    "config": {
+      "profanity": "raw",
+      "language": "en-US",
+      "format": "detailed",
+      "endpoint": "conversation"
+    },
+    "avg_wer": 0.1201,
+    "avg_cer": 0.0674,
+    "std_wer": 0.0506,
+    "n_success": 5,
+    "n_errors": 0,
+    "wer_scores": [
+      0.1667,
+      0.05,
+      0.125,
+      0.1818,
+      0.0769
+    ],
+    "cer_scores": [
+      0.069,
+      0.0303,
+      0.039,
+      0.1475,
+      0.0513
+    ]
+  },
+  {
+    "config_idx": 11,
+    "config": {
+      "profanity": "masked",
+      "language": "en-GB",
+      "format": "detailed",
+      "endpoint": "conversation"
+    },
+    "avg_wer": 0.0894,
+    "avg_cer": 0.0484,
+    "std_wer": 0.041,
+    "n_success": 5,
+    "n_errors": 0,
+    "wer_scores": [
+      0.1667,
+      0.05,
+      0.0625,
+      0.0909,
+      0.0769
+    ],
+    "cer_scores": [
+      0.069,
+      0.0303,
+      0.026,
+      0.0656,
+      0.0513
+    ]
+  },
+  {
+    "config_idx": 12,
+    "config": {
+      "profanity": "raw",
+      "language": "en-GB",
+      "format": "simple",
+      "endpoint": "dictation"
+    },
+    "avg_wer": 0.089,
+    "avg_cer": 0.0441,
+    "std_wer": 0.0458,
+    "n_success": 4,
+    "n_errors": 1,
+    "wer_scores": [
+      0.1667,
+      0.05,
+      0.0625,
+      0.0769
+    ],
+    "cer_scores": [
+      0.069,
+      0.0303,
+      0.026,
+      0.0513
+    ]
+  },
+  {
+    "config_idx": 13,
+    "config": {
+      "profanity": "raw",
+      "language": "en-US",
+      "format": "detailed",
+      "endpoint": "dictation"
+    },
+    "avg_wer": 0.1201,
+    "avg_cer": 0.0674,
+    "std_wer": 0.0506,
+    "n_success": 5,
+    "n_errors": 0,
+    "wer_scores": [
+      0.1667,
+      0.05,
+      0.125,
+      0.1818,
+      0.0769
+    ],
+    "cer_scores": [
+      0.069,
+      0.0303,
+      0.039,
+      0.1475,
+      0.0513
+    ]
+  },
+  {
+    "config_idx": 14,
+    "config": {
+      "profanity": "masked",
+      "language": "en-GB",
+      "format": "simple",
+      "endpoint": "conversation"
+    },
+    "avg_wer": 0.0894,
+    "avg_cer": 0.0484,
+    "std_wer": 0.041,
+    "n_success": 5,
+    "n_errors": 0,
+    "wer_scores": [
+      0.1667,
+      0.05,
+      0.0625,
+      0.0909,
+      0.0769
+    ],
+    "cer_scores": [
+      0.069,
+      0.0303,
+      0.026,
+      0.0656,
+      0.0513
+    ]
+  }
+]

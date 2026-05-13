@@ -27,7 +27,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 # Append src to path to import services
 sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
-from services.deepgram_transcriber import transcribe_with_deepgram
+from src.services.deepgram_transcriber import transcribe_with_deepgram
 
 
 # ── Paths ────────────────────────────────────────────────────────────────────
