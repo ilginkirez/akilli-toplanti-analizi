@@ -13,7 +13,8 @@ import { useAuth } from './auth/AuthContext';
 
 function AuthLoadingScreen() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 gap-6">
+      <img src="/logo.png" alt="MeetingAI Logo" className="h-20 w-20 animate-bounce" />
       <div className="rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm text-slate-600 shadow-sm">
         Oturum kontrol ediliyor...
       </div>

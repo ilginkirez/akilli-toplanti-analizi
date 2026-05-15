@@ -113,9 +113,7 @@ export function Login() {
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-6xl items-center justify-center">
         <div className="grid w-full gap-8 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="hidden rounded-[32px] border border-white/70 bg-white/60 p-10 shadow-2xl shadow-sky-200/40 backdrop-blur-xl lg:block">
-            <div className="mb-8 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-600 text-white shadow-lg shadow-sky-500/25">
-              <Calendar className="h-7 w-7" />
-            </div>
+            <img src="/logo.png" alt="MeetingAI Logo" className="mb-8 h-14 w-14 rounded-2xl shadow-lg shadow-purple-500/25" />
             <h1 className="max-w-xl text-4xl font-semibold leading-tight text-slate-900">
               Şirket içi çalışanları ve harici misafirleri tek bir toplantı akışında yönetin.
             </h1>
