@@ -62,7 +62,7 @@ export function Layout() {
             <img src="/logo.png" alt="MeetingAI Logo" className="h-10 w-10 rounded-xl shadow-lg shadow-purple-500/20" />
             <div>
               <h1 className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-lg font-bold text-transparent">
-                MEETING AI
+                MeetingAI
               </h1>
               <p className="text-xs text-gray-500 dark:text-gray-400">Smart Meeting Platform</p>
             </div>
